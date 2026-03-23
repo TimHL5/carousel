@@ -2,13 +2,14 @@ import type { SlideProps } from '@/types/carousel';
 import SlideLayout from './SlideLayout';
 
 export default function StepSlide(props: SlideProps) {
-  const { slide, theme, style, dimensions, fontScale, contentGap, accentBarWidth, contentPadding, bodyLineHeight, bodyMaxWidth, headlineScale } = props;
+  const { slide, theme, style, dimensions, fontScale, contentGap, accentBarWidth, contentPadding, bodyLineHeight, bodyMaxWidth, headlineScale, contentAlign } = props;
   const scale = dimensions.width / 1080;
   const p = (px: number) => px * scale;
   const s = (px: number) => px * scale * fontScale;
   const num = slide.num || String(props.slideIndex + 1).padStart(2, '0');
   const isBoldCard = style.id === 'bold-card';
   const isMinimal = style.id === 'minimal-type';
+  const centered = contentAlign === 'center';
 
   const content = (
     <>
@@ -90,6 +91,7 @@ export default function StepSlide(props: SlideProps) {
             lineHeight: bodyLineHeight,
             color: isMinimal ? theme.text : theme.secondary,
             maxWidth: `${bodyMaxWidth}%`,
+            ...(centered && { margin: '0 auto' }),
             whiteSpace: 'pre-line' as const,
             position: 'relative',
             zIndex: 2,

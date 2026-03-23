@@ -65,6 +65,7 @@ export default function SlideLayout({
           display: 'flex',
           flexDirection: 'column',
           justifyContent: justify,
+          alignItems: contentAlign === 'center' ? 'center' : 'flex-start',
           padding: p(contentPadding),
           position: 'relative',
           zIndex: 2,
@@ -100,9 +101,11 @@ export default function SlideLayout({
             display: 'flex',
             gap: p(6),
             justifyContent: 'center',
-            paddingBottom: p(32),
-            position: 'relative',
-            zIndex: 2,
+            position: 'absolute',
+            bottom: p(32),
+            left: 0,
+            right: 0,
+            zIndex: 3,
           }}
         >
           {Array.from({ length: totalSlides }, (_, i) => (

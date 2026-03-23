@@ -9,7 +9,7 @@ export default function CloseSlide(props: SlideProps) {
   const isBoldCard = style.id === 'bold-card';
 
   const content = (
-    <>
+    <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column' as const, alignItems: 'center' }}>
       {slide.headline && (
         <div
           style={{
@@ -49,7 +49,7 @@ export default function CloseSlide(props: SlideProps) {
           MLV
         </div>
       )}
-    </>
+    </div>
   );
 
   return (
