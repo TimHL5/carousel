@@ -18,7 +18,6 @@ export default function SlideLayout({
 }: SlideLayoutProps) {
   const scale = dimensions.width / 1080;
   const p = (px: number) => px * scale;
-  const s = (px: number) => px * scale * fontScale;
 
   return (
     <div

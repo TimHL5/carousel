@@ -27,12 +27,17 @@ export function exportPrefix(title: string, themeId: string): string {
 }
 
 // Double-render technique: first call warms font cache, second captures correctly
-// Adds ~200ms overhead but prevents missing web fonts on first export
+// Adds ~200ms overhead on first export; subsequent exports skip the warmup
+let fontCacheWarmed = false;
+
 async function captureNode(node: HTMLElement): Promise<string> {
-  // Warmup render — discard result
-  await toPng(node, { pixelRatio: 2 });
-  // Wait for font rasterization
-  await new Promise((resolve) => setTimeout(resolve, 100));
+  if (!fontCacheWarmed) {
+    // Warmup render — discard result
+    await toPng(node, { pixelRatio: 2 });
+    // Wait for font rasterization
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    fontCacheWarmed = true;
+  }
   // Final capture
   return toPng(node, { pixelRatio: 2 });
 }
@@ -94,11 +99,12 @@ export async function copySlideToClipboard(
     saveAs(blob, fallbackFilename);
     return { success: true, error: 'clipboard-unsupported' };
   } catch (error) {
-    // Clipboard permission denied — fallback to download
+    // Clipboard permission denied — fallback to download using already-captured data
     try {
-      const dataUrl = await captureNode(node);
-      const blob = dataUrlToBlob(dataUrl);
-      saveAs(blob, fallbackFilename);
+      // Re-render for fallback (clipboard may have consumed the first attempt)
+      const fallbackDataUrl = await captureNode(node);
+      const fallbackBlob = dataUrlToBlob(fallbackDataUrl);
+      saveAs(fallbackBlob, fallbackFilename);
       return { success: true, error: 'clipboard-fallback' };
     } catch (fallbackError) {
       return { success: false, error: String(fallbackError) };
