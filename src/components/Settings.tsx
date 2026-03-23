@@ -90,7 +90,7 @@ export default function Settings(props: SettingsProps) {
   const btnPrimary: React.CSSProperties = {
     width: '100%', padding: '10px 16px', backgroundColor: '#6AC670', color: '#0A0A0A',
     border: 'none', borderRadius: 4, fontSize: 13, fontWeight: 600,
-    cursor: 'pointer', fontFamily: 'inherit', textAlign: 'center',
+    cursor: 'pointer', fontFamily: 'inherit', textAlign: 'center', minHeight: 44,
   };
   const btnGhost: React.CSSProperties = {
     ...btnPrimary, backgroundColor: 'transparent', color: '#F5F5F5',
@@ -101,10 +101,10 @@ export default function Settings(props: SettingsProps) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
       {/* Undo / Redo */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
-        <button onClick={onUndo} disabled={!canUndo} style={{ ...btnGhost, width: 'auto', padding: '4px 10px', fontSize: 11, opacity: canUndo ? 1 : 0.3 }}>
+        <button onClick={onUndo} disabled={!canUndo} style={{ ...btnGhost, width: 'auto', padding: '8px 12px', fontSize: 11, minHeight: 36, opacity: canUndo ? 1 : 0.3 }}>
           Undo
         </button>
-        <button onClick={onRedo} disabled={!canRedo} style={{ ...btnGhost, width: 'auto', padding: '4px 10px', fontSize: 11, opacity: canRedo ? 1 : 0.3 }}>
+        <button onClick={onRedo} disabled={!canRedo} style={{ ...btnGhost, width: 'auto', padding: '8px 12px', fontSize: 11, minHeight: 36, opacity: canRedo ? 1 : 0.3 }}>
           Redo
         </button>
       </div>
@@ -223,7 +223,7 @@ export default function Settings(props: SettingsProps) {
         <span>Layout</span>
         <button
           onClick={onResetLayout}
-          style={{ background: 'none', border: 'none', color: '#6AC670', fontSize: 10, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
+          style={{ background: 'none', border: 'none', color: '#6AC670', fontSize: 10, cursor: 'pointer', fontFamily: 'inherit', padding: '4px 8px', minHeight: 28 }}
         >
           Reset
         </button>
@@ -257,7 +257,7 @@ export default function Settings(props: SettingsProps) {
             key={align}
             onClick={() => onContentAlignChange(align)}
             style={{
-              flex: 1, padding: '6px 0', fontSize: 11, fontWeight: 500,
+              flex: 1, padding: '10px 0', fontSize: 11, fontWeight: 500, minHeight: 36,
               backgroundColor: contentAlign === align ? '#6AC670' : 'transparent',
               color: contentAlign === align ? '#0A0A0A' : '#9CA3AF',
               border: contentAlign === align ? 'none' : '1px solid rgba(255,255,255,0.06)',

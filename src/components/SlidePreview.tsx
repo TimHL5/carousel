@@ -75,6 +75,7 @@ export default function SlidePreview({
     cursor: 'pointer',
     fontFamily: 'inherit',
     transition: 'border-color 0.15s ease-out',
+    minHeight: 44,
   };
 
   if (!currentSlide) {
