@@ -63,7 +63,7 @@ const totalSlides = sampleSlides.length;
 const theme: Theme = THEMES[0]; // MLV Dark
 const style: StyleVariant = STYLES[0]; // Clean Step
 const dims = { width: 1080, height: 1350 };
-const previewScale = 0.35;
+const previewScale = 0.4;
 
 export default function Home() {
   return (
@@ -97,8 +97,8 @@ export default function Home() {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
-          gap: 24,
+          gridTemplateColumns: 'repeat(auto-fill, minmax(420px, 1fr))',
+          gap: 32,
         }}
       >
         {sampleSlides.map((slide, i) => (
@@ -123,7 +123,9 @@ export default function Home() {
                 height: dims.height * previewScale,
                 overflow: 'hidden',
                 borderRadius: 8,
-                border: '1px solid rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                boxShadow: '0 0 0 1px rgba(255,255,255,0.04)',
+                backgroundColor: '#0A0A0A',
               }}
             >
               <SlideRenderer
