@@ -1,20 +1,25 @@
 'use client';
 
-import { useRef, useState, useCallback, useEffect } from 'react';
-import SlideRenderer from '@/components/slides/SlideRenderer';
+import { useRef, useCallback, useEffect, useState } from 'react';
 import ContentInput from '@/components/ContentInput';
+import SlidePreview from '@/components/SlidePreview';
+import Settings from '@/components/Settings';
+import CaptionArea from '@/components/CaptionArea';
+import Toast from '@/components/Toast';
 import { parseCarousel } from '@/lib/parser';
-import { THEMES } from '@/lib/themes';
-import { STYLES } from '@/lib/styles';
+import { THEMES, DEFAULT_THEME_ID, getThemeById } from '@/lib/themes';
+import { STYLES, DEFAULT_STYLE_ID, getStyleById } from '@/lib/styles';
+import { PRESETS, DEFAULT_PRESET_ID, getPresetById } from '@/lib/dimensions';
 import {
   exportSlide,
   exportAllAsZip,
   exportAsPdf,
   copySlideToClipboard,
 } from '@/lib/export';
-import type { SlideData, Theme, StyleVariant, CarouselData } from '@/types/carousel';
+import { useUndoReducer } from '@/lib/useUndoReducer';
+import type { CarouselState, Theme } from '@/types/carousel';
 
-// Sample carousel content — pre-loaded on first visit
+// ── Sample content pre-loaded on first visit ──────────────────
 const SAMPLE_CONTENT = `TITLE: How to build an app in a weekend using Claude
 PILLAR: Build
 TYPE: 80% value
@@ -105,75 +110,153 @@ Claude is the printing press. Your ideas are the book.
 
 #MLV #BuildDontPrepare #StudentFounder`;
 
-const theme: Theme = THEMES[0];
-const style: StyleVariant = STYLES[0];
-const dims = { width: 1080, height: 1350 };
-const previewScale = 0.45;
+// ── State reducer ──────────────────────────────────────────────
+
+type Action =
+  | { type: 'SET_RAW_TEXT'; text: string }
+  | { type: 'PARSE' }
+  | { type: 'SELECT_SLIDE'; index: number }
+  | { type: 'REORDER_SLIDES'; from: number; to: number }
+  | { type: 'SET_THEME'; id: string }
+  | { type: 'SET_STYLE'; id: string }
+  | { type: 'SET_PRESET'; id: string }
+  | { type: 'SET_FONT_SCALE'; scale: number }
+  | { type: 'TOGGLE_LOGO' }
+  | { type: 'SET_CAPTION'; caption: string }
+  | { type: 'SAVE_CUSTOM_THEME'; theme: Theme }
+  | { type: 'DELETE_CUSTOM_THEME'; id: string };
+
+function carouselReducer(state: CarouselState, action: Action): CarouselState {
+  switch (action.type) {
+    case 'SET_RAW_TEXT':
+      return { ...state, rawText: action.text };
+    case 'PARSE': {
+      const parsed = parseCarousel(state.rawText);
+      return {
+        ...state,
+        carousel: parsed,
+        caption: parsed.caption || state.caption,
+        selectedSlideIndex: Math.min(state.selectedSlideIndex, Math.max(0, parsed.slides.length - 1)),
+      };
+    }
+    case 'SELECT_SLIDE':
+      return { ...state, selectedSlideIndex: action.index };
+    case 'REORDER_SLIDES': {
+      if (!state.carousel) return state;
+      const newSlides = [...state.carousel.slides];
+      const [moved] = newSlides.splice(action.from, 1);
+      newSlides.splice(action.to, 0, moved);
+      return { ...state, carousel: { ...state.carousel, slides: newSlides } };
+    }
+    case 'SET_THEME':
+      return { ...state, selectedThemeId: action.id };
+    case 'SET_STYLE':
+      return { ...state, selectedStyleId: action.id };
+    case 'SET_PRESET':
+      return { ...state, selectedPresetId: action.id };
+    case 'SET_FONT_SCALE':
+      return { ...state, fontScale: action.scale };
+    case 'TOGGLE_LOGO':
+      return { ...state, showLogo: !state.showLogo };
+    case 'SET_CAPTION':
+      return { ...state, caption: action.caption };
+    case 'SAVE_CUSTOM_THEME': {
+      const existing = state.customThemes.filter((t) => t.id !== action.theme.id);
+      const updated = [...existing, action.theme];
+      try { localStorage.setItem('mlv-custom-themes', JSON.stringify(updated)); } catch { /* storage full */ }
+      return { ...state, customThemes: updated, selectedThemeId: action.theme.id };
+    }
+    case 'DELETE_CUSTOM_THEME': {
+      const filtered = state.customThemes.filter((t) => t.id !== action.id);
+      try { localStorage.setItem('mlv-custom-themes', JSON.stringify(filtered)); } catch { /* ignore */ }
+      return {
+        ...state,
+        customThemes: filtered,
+        selectedThemeId: state.selectedThemeId === action.id ? DEFAULT_THEME_ID : state.selectedThemeId,
+      };
+    }
+    default:
+      return state;
+  }
+}
+
+// ── Initial state ──────────────────────────────────────────────
+
+function getInitialState(): CarouselState {
+  const parsed = parseCarousel(SAMPLE_CONTENT);
+  let customThemes: Theme[] = [];
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem('mlv-custom-themes');
+      if (saved) customThemes = JSON.parse(saved);
+    } catch { /* ignore */ }
+  }
+  return {
+    rawText: SAMPLE_CONTENT,
+    carousel: parsed,
+    selectedSlideIndex: 0,
+    selectedThemeId: DEFAULT_THEME_ID,
+    selectedStyleId: DEFAULT_STYLE_ID,
+    selectedPresetId: DEFAULT_PRESET_ID,
+    showLogo: false,
+    fontScale: 1,
+    caption: parsed.caption || '',
+    customThemes,
+  };
+}
+
+// ── Main component ─────────────────────────────────────────────
 
 export default function Home() {
-  const [rawText, setRawText] = useState(SAMPLE_CONTENT);
-  const [carousel, setCarousel] = useState<CarouselData>(() => parseCarousel(SAMPLE_CONTENT));
-  const [selectedSlideIndex, setSelectedSlideIndex] = useState(0);
+  const [history, dispatch, { canUndo, canRedo }] = useUndoReducer(carouselReducer, getInitialState());
+  const state = history.present;
+
   const [exporting, setExporting] = useState(false);
-  const [exportStatus, setExportStatus] = useState('');
+  const [toast, setToast] = useState<{ message: string; accent?: string; duration?: number } | null>(null);
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const slides = carousel.slides;
+  const slides = state.carousel?.slides || [];
   const totalSlides = slides.length;
+  const allThemes = [...THEMES, ...state.customThemes];
+  const theme = allThemes.find((t) => t.id === state.selectedThemeId) || THEMES[0];
+  const style = getStyleById(state.selectedStyleId) || STYLES[0];
+  const preset = getPresetById(state.selectedPresetId) || PRESETS[1];
+  const dims = { width: preset.width, height: preset.height };
 
-  // Debounced auto-parse on text change (300ms)
+  const showToast = useCallback((message: string, accent?: string, duration?: number) => {
+    setToast({ message, accent, duration });
+  }, []);
+
+  // Debounced auto-parse
   const handleTextChange = useCallback((text: string) => {
-    setRawText(text);
+    dispatch({ type: 'SET_RAW_TEXT', text });
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      const parsed = parseCarousel(text);
-      setCarousel(parsed);
-      setSelectedSlideIndex((prev) => Math.min(prev, Math.max(0, parsed.slides.length - 1)));
-    }, 300);
-  }, []);
+    debounceRef.current = setTimeout(() => dispatch({ type: 'PARSE' }), 300);
+  }, [dispatch]);
 
-  // Cleanup debounce on unmount
   useEffect(() => {
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, []);
 
-  const handleSlidesReorder = useCallback((fromIndex: number, toIndex: number) => {
-    setCarousel((prev) => {
-      const newSlides = [...prev.slides];
-      const [moved] = newSlides.splice(fromIndex, 1);
-      newSlides.splice(toIndex, 0, moved);
-      return { ...prev, slides: newSlides };
-    });
-  }, []);
-
-  // Trim stale refs when slide count changes
+  // Export handlers
   const getSlideNodes = useCallback(() => {
-    return slideRefs.current.slice(0, slides.length).filter(Boolean) as HTMLDivElement[];
-  }, [slides.length]);
-
-  // Status timeout management — clear previous timeout before setting new one
-  const statusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const showStatus = useCallback((msg: string, duration = 3000) => {
-    if (statusTimeoutRef.current) clearTimeout(statusTimeoutRef.current);
-    setExportStatus(msg);
-    statusTimeoutRef.current = setTimeout(() => setExportStatus(''), duration);
-  }, []);
+    return slideRefs.current.slice(0, totalSlides).filter(Boolean) as HTMLDivElement[];
+  }, [totalSlides]);
 
   const handleExportZip = async () => {
     setExporting(true);
     try {
-      showStatus('Exporting...');
+      showToast('Exporting...');
       const nodes = getSlideNodes();
-      const result = await exportAllAsZip(nodes, carousel.title || 'carousel', theme.id, (cur, tot) => {
-        showStatus(`Exporting ${cur}/${tot}...`);
+      const result = await exportAllAsZip(nodes, state.carousel?.title || 'carousel', theme.id, (cur, tot) => {
+        showToast(`Exporting ${cur}/${tot}...`);
       });
-      showStatus(result.success
-        ? (result.failedSlides.length > 0 ? `Downloaded! (${result.failedSlides.length} failed)` : 'Downloaded!')
-        : `Failed: ${result.error}`
-      );
+      if (result.success) {
+        showToast(result.failedSlides.length > 0 ? `Downloaded! (${result.failedSlides.length} failed)` : 'Downloaded!');
+      } else {
+        showToast(`Export failed — try again`, '#EF4444', 0);
+      }
     } finally {
       setExporting(false);
     }
@@ -182,12 +265,12 @@ export default function Home() {
   const handleExportPdf = async () => {
     setExporting(true);
     try {
-      showStatus('Generating PDF...');
+      showToast('Generating PDF...');
       const nodes = getSlideNodes();
-      const result = await exportAsPdf(nodes, carousel.title || 'carousel', theme.id, dims, (cur, tot) => {
-        showStatus(`Rendering ${cur}/${tot}...`);
+      const result = await exportAsPdf(nodes, state.carousel?.title || 'carousel', theme.id, dims, (cur, tot) => {
+        showToast(`Rendering ${cur}/${tot}...`);
       });
-      showStatus(result.success ? 'PDF downloaded!' : `Failed: ${result.error}`);
+      showToast(result.success ? 'PDF downloaded!' : 'PDF failed — try again');
     } finally {
       setExporting(false);
     }
@@ -199,7 +282,7 @@ export default function Home() {
     setExporting(true);
     try {
       const result = await exportSlide(node, `slide-${String(index + 1).padStart(2, '0')}.png`);
-      showStatus(result.success ? 'Slide downloaded!' : `Failed: ${result.error}`);
+      showToast(result.success ? 'Slide downloaded!' : 'Export failed');
     } finally {
       setExporting(false);
     }
@@ -211,170 +294,108 @@ export default function Home() {
     setExporting(true);
     try {
       const result = await copySlideToClipboard(node, `slide-${String(index + 1).padStart(2, '0')}.png`);
-      showStatus(result.success ? (result.error === 'clipboard-fallback' ? 'Saved as file' : 'Copied!') : `Failed: ${result.error}`);
+      showToast(result.success ? (result.error === 'clipboard-fallback' ? 'Saved as file' : 'Copied!') : 'Copy failed');
     } finally {
       setExporting(false);
     }
   };
 
-  const currentSlide = slides[selectedSlideIndex];
-
-  const btnStyle: React.CSSProperties = {
-    padding: '10px 20px', backgroundColor: '#6AC670', color: '#0A0A0A',
-    border: 'none', borderRadius: 4, fontSize: 13, fontWeight: 600,
-    cursor: 'pointer', fontFamily: 'inherit',
-  };
-  const btnGhostStyle: React.CSSProperties = {
-    ...btnStyle, backgroundColor: 'transparent', color: '#F5F5F5',
-    border: '1px solid rgba(255,255,255,0.12)',
-  };
-
   return (
-    <main style={{ backgroundColor: '#08080C', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <main style={{ backgroundColor: '#08080C', minHeight: '100vh', height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* Header */}
-      <div style={{ padding: '16px 24px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <header style={{ padding: '12px 24px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
         <div>
-          <h1 style={{ color: '#F5F5F5', fontSize: 16, fontWeight: 700, margin: 0 }}>
-            MLV Carousel Generator
-          </h1>
+          <h1 style={{ color: '#F5F5F5', fontSize: 16, fontWeight: 700, margin: 0 }}>MLV Carousel Generator</h1>
           <p style={{ color: '#9CA3AF', fontSize: 11, margin: 0 }}>
-            {carousel.title || 'Untitled'} · {totalSlides} slides · {theme.name} · {style.name}
+            {state.carousel?.title || 'Untitled'} · {totalSlides} slide{totalSlides !== 1 ? 's' : ''} · {theme.name} · {style.name}
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <button style={btnStyle} onClick={handleExportZip} disabled={exporting || totalSlides === 0}>
-            Download ZIP
-          </button>
-          <button style={btnGhostStyle} onClick={handleExportPdf} disabled={exporting || totalSlides === 0}>
-            PDF
-          </button>
-          {exportStatus && (
-            <span style={{ color: '#6AC670', fontSize: 12, fontWeight: 500 }}>{exportStatus}</span>
-          )}
-        </div>
-      </div>
+      </header>
 
       {/* 3-panel layout */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        {/* Left panel: input */}
-        <div style={{ width: '25%', minWidth: 240, padding: 16, borderRight: '1px solid rgba(255,255,255,0.06)', overflowY: 'auto' }}>
+        {/* Left: Input */}
+        <div
+          role="region"
+          aria-label="Content input"
+          style={{ width: '25%', minWidth: 240, padding: 16, borderRight: '1px solid rgba(255,255,255,0.06)', overflowY: 'auto' }}
+        >
           <ContentInput
-            rawText={rawText}
+            rawText={state.rawText}
             slides={slides}
-            selectedSlideIndex={selectedSlideIndex}
+            selectedSlideIndex={state.selectedSlideIndex}
             onTextChange={handleTextChange}
-            onSlideSelect={setSelectedSlideIndex}
-            onSlidesReorder={handleSlidesReorder}
+            onSlideSelect={(i) => dispatch({ type: 'SELECT_SLIDE', index: i })}
+            onSlidesReorder={(from, to) => dispatch({ type: 'REORDER_SLIDES', from, to })}
           />
         </div>
 
-        {/* Center panel: preview */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: '#08080C' }}>
-          {currentSlide ? (
-            <>
-              <div
-                style={{
-                  width: dims.width * previewScale,
-                  height: dims.height * previewScale,
-                  overflow: 'hidden',
-                  borderRadius: 12,
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  position: 'relative',
-                }}
-              >
-                <div style={{ transform: `scale(${previewScale})`, transformOrigin: 'top left' }}>
-                  <SlideRenderer
-                    slide={currentSlide}
-                    slideIndex={selectedSlideIndex}
-                    totalSlides={totalSlides}
-                    theme={theme}
-                    style={style}
-                    dimensions={dims}
-                    showLogo={false}
-                    fontScale={1}
-                  />
-                </div>
-              </div>
-              {/* Navigation */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 16 }}>
-                <button
-                  onClick={() => setSelectedSlideIndex(Math.max(0, selectedSlideIndex - 1))}
-                  disabled={selectedSlideIndex === 0}
-                  style={{ ...btnGhostStyle, padding: '6px 12px', fontSize: 14, opacity: selectedSlideIndex === 0 ? 0.3 : 1 }}
-                >
-                  ◀
-                </button>
-                <span style={{ color: '#9CA3AF', fontSize: 13, fontVariantNumeric: 'tabular-nums' }}>
-                  {selectedSlideIndex + 1} / {totalSlides}
-                </span>
-                <button
-                  onClick={() => setSelectedSlideIndex(Math.min(totalSlides - 1, selectedSlideIndex + 1))}
-                  disabled={selectedSlideIndex >= totalSlides - 1}
-                  style={{ ...btnGhostStyle, padding: '6px 12px', fontSize: 14, opacity: selectedSlideIndex >= totalSlides - 1 ? 0.3 : 1 }}
-                >
-                  ▶
-                </button>
-                <button
-                  onClick={() => handleCopySlide(selectedSlideIndex)}
-                  disabled={exporting}
-                  style={{ ...btnGhostStyle, padding: '6px 12px', fontSize: 11 }}
-                >
-                  Copy
-                </button>
-                <button
-                  onClick={() => handleExportSingle(selectedSlideIndex)}
-                  disabled={exporting}
-                  style={{ ...btnGhostStyle, padding: '6px 12px', fontSize: 11 }}
-                >
-                  PNG
-                </button>
-              </div>
-            </>
-          ) : (
-            <div style={{ color: '#9CA3AF', fontSize: 14, textAlign: 'center' }}>
-              <p style={{ marginBottom: 8 }}>Your slides will appear here</p>
-              <p style={{ fontSize: 12 }}>Paste a carousel script in the left panel</p>
-            </div>
-          )}
+        {/* Center: Preview */}
+        <div role="main" aria-label="Slide preview" style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
+          <SlidePreview
+            slides={slides}
+            selectedIndex={state.selectedSlideIndex}
+            totalSlides={totalSlides}
+            theme={theme}
+            style={style}
+            dimensions={dims}
+            showLogo={state.showLogo}
+            fontScale={state.fontScale}
+            onNavigate={(i) => dispatch({ type: 'SELECT_SLIDE', index: i })}
+            onExportSingle={handleExportSingle}
+            onCopySlide={handleCopySlide}
+            exporting={exporting}
+            slideRefs={slideRefs}
+          />
         </div>
 
-        {/* Right panel: settings (placeholder) */}
-        <div style={{ width: '20%', minWidth: 200, padding: 16, borderLeft: '1px solid rgba(255,255,255,0.06)', overflowY: 'auto' }}>
-          <div style={{ fontSize: 10, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#9CA3AF', marginBottom: 12 }}>
-            Settings
-          </div>
-          <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 8 }}>Platform</div>
-          <div style={{ fontSize: 12, color: '#F5F5F5', marginBottom: 16 }}>Instagram Portrait (1080 × 1350)</div>
-          <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 8 }}>Theme</div>
-          <div style={{ fontSize: 12, color: '#F5F5F5', marginBottom: 16 }}>{theme.name}</div>
-          <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 8 }}>Style</div>
-          <div style={{ fontSize: 12, color: '#F5F5F5', marginBottom: 16 }}>{style.name}</div>
+        {/* Right: Settings */}
+        <div
+          role="complementary"
+          aria-label="Settings"
+          style={{ width: '22%', minWidth: 220, maxWidth: 300, padding: 16, borderLeft: '1px solid rgba(255,255,255,0.06)', overflowY: 'auto' }}
+        >
+          <Settings
+            selectedThemeId={state.selectedThemeId}
+            selectedStyleId={state.selectedStyleId}
+            selectedPresetId={state.selectedPresetId}
+            showLogo={state.showLogo}
+            fontScale={state.fontScale}
+            customThemes={state.customThemes}
+            totalSlides={totalSlides}
+            exporting={exporting}
+            canUndo={canUndo}
+            canRedo={canRedo}
+            onThemeChange={(id) => dispatch({ type: 'SET_THEME', id })}
+            onStyleChange={(id) => dispatch({ type: 'SET_STYLE', id })}
+            onPresetChange={(id) => dispatch({ type: 'SET_PRESET', id })}
+            onLogoToggle={() => dispatch({ type: 'TOGGLE_LOGO' })}
+            onFontScaleChange={(scale) => dispatch({ type: 'SET_FONT_SCALE', scale })}
+            onCustomThemeSave={(theme) => dispatch({ type: 'SAVE_CUSTOM_THEME', theme })}
+            onCustomThemeDelete={(id) => dispatch({ type: 'DELETE_CUSTOM_THEME', id })}
+            onExportZip={handleExportZip}
+            onExportPdf={handleExportPdf}
+            onUndo={() => dispatch({ type: 'UNDO' })}
+            onRedo={() => dispatch({ type: 'REDO' })}
+          />
         </div>
       </div>
 
       {/* Caption bar */}
-      {carousel.caption && (
-        <div style={{ padding: '12px 24px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-          <div style={{ flex: 1, fontSize: 12, color: '#9CA3AF', whiteSpace: 'pre-line', maxHeight: 80, overflowY: 'auto' }}>
-            {carousel.caption}
-          </div>
-          <button
-            style={{ ...btnGhostStyle, padding: '4px 12px', fontSize: 11, flexShrink: 0 }}
-            onClick={() => { navigator.clipboard.writeText(carousel.caption || '').then(() => showStatus('Caption copied!')).catch(() => showStatus('Copy failed')); }}
-          >
-            Copy Caption
-          </button>
-        </div>
-      )}
+      <CaptionArea
+        caption={state.caption}
+        onCaptionChange={(caption) => dispatch({ type: 'SET_CAPTION', caption })}
+      />
 
-      {/* Hidden full-size slides for export */}
-      <div style={{ position: 'absolute', left: -9999, top: 0, pointerEvents: 'none' }} aria-hidden="true">
-        {slides.map((slide, i) => (
-          <div key={`export-${i}`} ref={(el) => { slideRefs.current[i] = el; }}>
-            <SlideRenderer slide={slide} slideIndex={i} totalSlides={totalSlides} theme={theme} style={style} dimensions={dims} showLogo={false} fontScale={1} />
-          </div>
-        ))}
-      </div>
+      {/* Toast */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          accent={toast.accent}
+          duration={toast.duration}
+          onDismiss={() => setToast(null)}
+        />
+      )}
     </main>
   );
 }
