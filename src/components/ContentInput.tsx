@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, useMemo } from 'react';
 import type { SlideData } from '@/types/carousel';
 
 interface ContentInputProps {
@@ -36,7 +36,14 @@ export default function ContentInput({
 }: ContentInputProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const dragCounter = useRef(0);
+
+  // Generate stable keys from slide content to avoid key={i} reorder bugs
+  const slideKeys = useMemo(() =>
+    slides.map((s, i) => `${s.type}-${(s.headline || s.body || '').slice(0, 20)}-${i}`),
+    [slides],
+  );
 
   const handleDragStart = useCallback((e: React.DragEvent, index: number) => {
     setDragIndex(index);
@@ -130,10 +137,11 @@ export default function ContentInput({
             const isSelected = i === selectedSlideIndex;
             const isDragging = i === dragIndex;
             const isDragOver = i === dragOverIndex && dragIndex !== null && dragIndex !== i;
+            const isHovered = i === hoveredIndex && !isSelected;
 
             return (
               <div
-                key={i}
+                key={slideKeys[i]}
                 draggable
                 onDragStart={(e) => handleDragStart(e, i)}
                 onDragOver={handleDragOver}
@@ -152,7 +160,7 @@ export default function ContentInput({
                   cursor: 'pointer',
                   backgroundColor: isSelected
                     ? 'rgba(106, 198, 112, 0.08)'
-                    : 'transparent',
+                    : isHovered ? 'rgba(255,255,255,0.03)' : 'transparent',
                   borderLeft: isSelected
                     ? '2px solid #6AC670'
                     : '2px solid transparent',
@@ -160,18 +168,8 @@ export default function ContentInput({
                   borderTop: isDragOver ? '2px solid #6AC670' : '2px solid transparent',
                   transition: 'background-color 0.15s ease-out',
                 }}
-                onMouseEnter={(e) => {
-                  if (!isSelected) {
-                    (e.currentTarget as HTMLDivElement).style.backgroundColor =
-                      'rgba(255,255,255,0.03)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isSelected) {
-                    (e.currentTarget as HTMLDivElement).style.backgroundColor =
-                      'transparent';
-                  }
-                }}
+                onMouseEnter={() => setHoveredIndex(i)}
+                onMouseLeave={() => setHoveredIndex((prev) => prev === i ? null : prev)}
               >
                 {/* Drag handle */}
                 <span

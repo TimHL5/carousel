@@ -149,55 +149,72 @@ export default function Home() {
     });
   }, []);
 
+  // Trim stale refs when slide count changes
   const getSlideNodes = useCallback(() => {
-    return slideRefs.current.filter(Boolean) as HTMLDivElement[];
+    return slideRefs.current.slice(0, slides.length).filter(Boolean) as HTMLDivElement[];
+  }, [slides.length]);
+
+  // Status timeout management — clear previous timeout before setting new one
+  const statusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showStatus = useCallback((msg: string, duration = 3000) => {
+    if (statusTimeoutRef.current) clearTimeout(statusTimeoutRef.current);
+    setExportStatus(msg);
+    statusTimeoutRef.current = setTimeout(() => setExportStatus(''), duration);
   }, []);
 
   const handleExportZip = async () => {
     setExporting(true);
-    setExportStatus('Exporting...');
-    const nodes = getSlideNodes();
-    const result = await exportAllAsZip(nodes, carousel.title || 'carousel', theme.id, (cur, tot) => {
-      setExportStatus(`Exporting ${cur}/${tot}...`);
-    });
-    setExportStatus(result.success
-      ? (result.failedSlides.length > 0 ? `Downloaded! (${result.failedSlides.length} failed)` : 'Downloaded!')
-      : `Failed: ${result.error}`
-    );
-    setTimeout(() => setExportStatus(''), 3000);
-    setExporting(false);
+    try {
+      showStatus('Exporting...');
+      const nodes = getSlideNodes();
+      const result = await exportAllAsZip(nodes, carousel.title || 'carousel', theme.id, (cur, tot) => {
+        showStatus(`Exporting ${cur}/${tot}...`);
+      });
+      showStatus(result.success
+        ? (result.failedSlides.length > 0 ? `Downloaded! (${result.failedSlides.length} failed)` : 'Downloaded!')
+        : `Failed: ${result.error}`
+      );
+    } finally {
+      setExporting(false);
+    }
   };
 
   const handleExportPdf = async () => {
     setExporting(true);
-    setExportStatus('Generating PDF...');
-    const nodes = getSlideNodes();
-    const result = await exportAsPdf(nodes, carousel.title || 'carousel', theme.id, dims, (cur, tot) => {
-      setExportStatus(`Rendering ${cur}/${tot}...`);
-    });
-    setExportStatus(result.success ? 'PDF downloaded!' : `Failed: ${result.error}`);
-    setTimeout(() => setExportStatus(''), 3000);
-    setExporting(false);
+    try {
+      showStatus('Generating PDF...');
+      const nodes = getSlideNodes();
+      const result = await exportAsPdf(nodes, carousel.title || 'carousel', theme.id, dims, (cur, tot) => {
+        showStatus(`Rendering ${cur}/${tot}...`);
+      });
+      showStatus(result.success ? 'PDF downloaded!' : `Failed: ${result.error}`);
+    } finally {
+      setExporting(false);
+    }
   };
 
   const handleExportSingle = async (index: number) => {
     const node = slideRefs.current[index];
     if (!node) return;
     setExporting(true);
-    const result = await exportSlide(node, `slide-${String(index + 1).padStart(2, '0')}.png`);
-    setExportStatus(result.success ? 'Slide downloaded!' : `Failed: ${result.error}`);
-    setTimeout(() => setExportStatus(''), 3000);
-    setExporting(false);
+    try {
+      const result = await exportSlide(node, `slide-${String(index + 1).padStart(2, '0')}.png`);
+      showStatus(result.success ? 'Slide downloaded!' : `Failed: ${result.error}`);
+    } finally {
+      setExporting(false);
+    }
   };
 
   const handleCopySlide = async (index: number) => {
     const node = slideRefs.current[index];
     if (!node) return;
     setExporting(true);
-    const result = await copySlideToClipboard(node, `slide-${String(index + 1).padStart(2, '0')}.png`);
-    setExportStatus(result.success ? (result.error === 'clipboard-fallback' ? 'Saved as file' : 'Copied!') : `Failed: ${result.error}`);
-    setTimeout(() => setExportStatus(''), 3000);
-    setExporting(false);
+    try {
+      const result = await copySlideToClipboard(node, `slide-${String(index + 1).padStart(2, '0')}.png`);
+      showStatus(result.success ? (result.error === 'clipboard-fallback' ? 'Saved as file' : 'Copied!') : `Failed: ${result.error}`);
+    } finally {
+      setExporting(false);
+    }
   };
 
   const currentSlide = slides[selectedSlideIndex];
@@ -343,7 +360,7 @@ export default function Home() {
           </div>
           <button
             style={{ ...btnGhostStyle, padding: '4px 12px', fontSize: 11, flexShrink: 0 }}
-            onClick={() => { navigator.clipboard.writeText(carousel.caption || ''); setExportStatus('Caption copied!'); setTimeout(() => setExportStatus(''), 2000); }}
+            onClick={() => { navigator.clipboard.writeText(carousel.caption || '').then(() => showStatus('Caption copied!')).catch(() => showStatus('Copy failed')); }}
           >
             Copy Caption
           </button>

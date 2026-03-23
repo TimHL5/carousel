@@ -151,7 +151,10 @@ export function parseCarousel(text: string): CarouselData {
     slides.push({ type: 'text', body: text.trim() });
   }
 
-  const result: CarouselData = { title, slides };
+  // Cap at 50 slides to prevent browser tab crashes on huge inputs
+  const cappedSlides = slides.slice(0, 50);
+
+  const result: CarouselData = { title, slides: cappedSlides };
   if (pillar) result.pillar = pillar;
   if (type) result.type = type;
   if (caption !== undefined) result.caption = caption;
