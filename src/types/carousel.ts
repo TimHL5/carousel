@@ -1,0 +1,100 @@
+// Core slide type union — maps to parser [type] tags
+export type SlideType =
+  | 'hook'
+  | 'step'
+  | 'split'
+  | 'result'
+  | 'concept'
+  | 'close'
+  | 'close-cta'
+  | 'quote'
+  | 'text';
+
+// Data for a single slide — all fields optional except type
+// Parser populates what it finds; renderers handle missing fields gracefully
+export interface SlideData {
+  type: SlideType;
+  headline?: string;
+  sub?: string;
+  body?: string;
+  cta?: string;
+  num?: string;
+  label?: string;
+  left?: string;
+  right?: string;
+  logo?: boolean;
+}
+
+// Complete parsed carousel — output of parser.parse()
+export interface CarouselData {
+  title: string;
+  pillar?: string;
+  type?: string;
+  slides: SlideData[];
+  caption?: string;
+}
+
+// Theme definition — 5 built-in + user-created custom themes
+// All values are hex strings (no CSS variables — must serialize for html-to-image)
+export interface Theme {
+  id: string;
+  name: string;
+  bg: string;
+  text: string;
+  accent: string;
+  secondary: string;
+  card: string;
+}
+
+// Structural style variant — changes decoration, not content
+export interface StyleVariant {
+  id: string;
+  name: string;
+  description: string;
+}
+
+// Export dimension preset — platform-specific canvas sizes
+export interface ExportPreset {
+  id: string;
+  name: string;
+  width: number;
+  height: number;
+  platform: string;
+}
+
+// Single source of truth for all app state
+// All fields are serializable JSON — no class instances, no functions
+// Backend-ready: can swap useReducer → localStorage → Supabase without rewriting components
+export interface CarouselState {
+  rawText: string;
+  carousel: CarouselData | null;
+  selectedSlideIndex: number;
+  selectedThemeId: string;
+  selectedStyleId: string;
+  selectedPresetId: string;
+  showLogo: boolean;
+  fontScale: number;
+  caption: string;
+  customThemes: Theme[];
+}
+
+// Undo/redo history wrapper — separates UI concern from data model
+// CarouselState stays clean for persistence; history is ephemeral
+export interface HistoryState<T> {
+  past: T[];
+  present: T;
+  future: T[];
+}
+
+// Props passed to every slide renderer component
+// Renderers are presentational — no internal state, no side effects
+export interface SlideProps {
+  slide: SlideData;
+  slideIndex: number;
+  totalSlides: number;
+  theme: Theme;
+  style: StyleVariant;
+  dimensions: { width: number; height: number };
+  showLogo: boolean;
+  fontScale: number;
+}
