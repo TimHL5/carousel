@@ -133,7 +133,11 @@ type Action =
   | { type: 'SET_BODY_LINE_HEIGHT'; value: number }
   | { type: 'SET_BODY_MAX_WIDTH'; value: number }
   | { type: 'SET_HEADLINE_SCALE'; value: number }
-  | { type: 'RESET_LAYOUT' };
+  | { type: 'RESET_LAYOUT' }
+  | { type: 'SET_EDIT_MODE'; value: boolean }
+  | { type: 'SET_SELECTED_ELEMENT'; id: string | null }
+  | { type: 'SET_ELEMENT_OVERRIDE'; slideIndex: number; override: import('@/types/carousel').ElementOverride }
+  | { type: 'REMOVE_ELEMENT_OVERRIDE'; slideIndex: number; elementId: string };
 
 function carouselReducer(state: CarouselState, action: Action): CarouselState {
   switch (action.type) {
@@ -211,6 +215,27 @@ function carouselReducer(state: CarouselState, action: Action): CarouselState {
       return { ...state, headlineScale: action.value };
     case 'RESET_LAYOUT':
       return { ...state, contentPadding: 48, contentGap: 24, accentBarWidth: 4, contentAlign: 'left' as const, verticalAlign: 'center' as const, bodyLineHeight: 1.5, bodyMaxWidth: 85, headlineScale: 1.0 };
+    case 'SET_EDIT_MODE':
+      return { ...state, editMode: action.value, selectedElementId: action.value ? state.selectedElementId : null };
+    case 'SET_SELECTED_ELEMENT':
+      return { ...state, selectedElementId: action.id };
+    case 'SET_ELEMENT_OVERRIDE': {
+      if (!state.carousel) return state;
+      const slides = [...state.carousel.slides];
+      const slide = { ...slides[action.slideIndex] };
+      const existing = (slide.overrides || []).filter((o) => o.id !== action.override.id);
+      slide.overrides = [...existing, action.override];
+      slides[action.slideIndex] = slide;
+      return { ...state, carousel: { ...state.carousel, slides } };
+    }
+    case 'REMOVE_ELEMENT_OVERRIDE': {
+      if (!state.carousel) return state;
+      const slides = [...state.carousel.slides];
+      const slide = { ...slides[action.slideIndex] };
+      slide.overrides = (slide.overrides || []).filter((o) => o.id !== action.elementId);
+      slides[action.slideIndex] = slide;
+      return { ...state, carousel: { ...state.carousel, slides } };
+    }
     default:
       return state;
   }
@@ -260,6 +285,8 @@ function getInitialState(): CarouselState {
     bodyLineHeight: 1.5,
     bodyMaxWidth: 85,
     headlineScale: 1.0,
+    editMode: false,
+    selectedElementId: null,
   };
 }
 
@@ -270,7 +297,7 @@ export default function Home() {
   const [history, dispatch, { canUndo, canRedo }] = useUndoReducer(
     carouselReducer,
     getInitialState(),
-    ['SET_RAW_TEXT', 'SET_CAPTION', 'SET_FONT_SCALE', 'SET_CONTENT_PADDING', 'SET_CONTENT_GAP', 'SET_ACCENT_BAR_WIDTH', 'SET_BODY_LINE_HEIGHT', 'SET_BODY_MAX_WIDTH', 'SET_HEADLINE_SCALE'],
+    ['SET_RAW_TEXT', 'SET_CAPTION', 'SET_FONT_SCALE', 'SET_CONTENT_PADDING', 'SET_CONTENT_GAP', 'SET_ACCENT_BAR_WIDTH', 'SET_BODY_LINE_HEIGHT', 'SET_BODY_MAX_WIDTH', 'SET_HEADLINE_SCALE', 'SET_EDIT_MODE', 'SET_SELECTED_ELEMENT'],
   );
   const state = history.present;
 
@@ -373,6 +400,23 @@ export default function Home() {
             {state.carousel?.title || 'Untitled'} · {totalSlides} slide{totalSlides !== 1 ? 's' : ''} · {theme.name} · {style.name}
           </p>
         </div>
+        <button
+          onClick={() => dispatch({ type: 'SET_EDIT_MODE', value: !state.editMode })}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: state.editMode ? '#3B82F6' : 'transparent',
+            color: state.editMode ? '#FFFFFF' : '#9CA3AF',
+            border: state.editMode ? 'none' : '1px solid rgba(255,255,255,0.12)',
+            borderRadius: 4,
+            fontSize: 12,
+            fontWeight: 500,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            minHeight: 36,
+          }}
+        >
+          {state.editMode ? 'Edit Mode' : 'Preview'}
+        </button>
       </header>
 
       {/* 3-panel layout */}
@@ -412,6 +456,9 @@ export default function Home() {
             bodyLineHeight={state.bodyLineHeight}
             bodyMaxWidth={state.bodyMaxWidth}
             headlineScale={state.headlineScale}
+            editMode={state.editMode}
+            selectedElementId={state.selectedElementId}
+            onElementSelect={(id) => dispatch({ type: 'SET_SELECTED_ELEMENT', id })}
             onNavigate={(i) => dispatch({ type: 'SELECT_SLIDE', index: i })}
             onExportSingle={handleExportSingle}
             onCopySlide={handleCopySlide}

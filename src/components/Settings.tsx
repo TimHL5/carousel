@@ -163,6 +163,8 @@ export default function Settings(props: SettingsProps) {
                   bodyLineHeight={1.5}
                   bodyMaxWidth={85}
                   headlineScale={1}
+                  editMode={false}
+                  selectedElementId={null}
                 />
               </div>
             </div>

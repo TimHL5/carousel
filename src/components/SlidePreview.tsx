@@ -21,6 +21,9 @@ interface SlidePreviewProps {
   bodyLineHeight: number;
   bodyMaxWidth: number;
   headlineScale: number;
+  editMode: boolean;
+  selectedElementId: string | null;
+  onElementSelect: (id: string) => void;
   onNavigate: (index: number) => void;
   onExportSingle: (index: number) => void;
   onCopySlide: (index: number) => void;
@@ -45,6 +48,9 @@ export default function SlidePreview({
   bodyLineHeight,
   bodyMaxWidth,
   headlineScale,
+  editMode,
+  selectedElementId,
+  onElementSelect,
   onNavigate,
   onExportSingle,
   onCopySlide,
@@ -148,6 +154,9 @@ export default function SlidePreview({
             bodyLineHeight={bodyLineHeight}
             bodyMaxWidth={bodyMaxWidth}
             headlineScale={headlineScale}
+            editMode={editMode}
+            selectedElementId={selectedElementId}
+            onElementSelect={onElementSelect}
           />
         </div>
       </div>
@@ -211,6 +220,8 @@ export default function SlidePreview({
               bodyLineHeight={bodyLineHeight}
               bodyMaxWidth={bodyMaxWidth}
               headlineScale={headlineScale}
+              editMode={false}
+              selectedElementId={null}
             />
           </div>
         ))}

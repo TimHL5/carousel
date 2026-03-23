@@ -10,6 +10,21 @@ export type SlideType =
   | 'quote'
   | 'text';
 
+// Per-element visual override — created when user drags/resizes/edits an element
+// No override = default flexbox position. Override = absolute positioning.
+export interface ElementOverride {
+  id: string;              // "headline", "body", "sub", "cta", "step-label", "accent-bar", "logo", "dot-indicator"
+  x?: number;              // absolute x in slide pixels (0-1080)
+  y?: number;              // absolute y
+  width?: number;          // override width (undefined = auto)
+  height?: number;         // override height (undefined = auto)
+  fontSize?: number;       // override font size in slide pixels
+  fontWeight?: number;     // override weight
+  color?: string;          // override color hex
+  visible?: boolean;       // hide/show element (default true)
+  rotation?: number;       // degrees rotation (default 0)
+}
+
 // Data for a single slide — all fields optional except type
 // Parser populates what it finds; renderers handle missing fields gracefully
 export interface SlideData {
@@ -23,6 +38,7 @@ export interface SlideData {
   left?: string;
   right?: string;
   logo?: boolean;
+  overrides?: ElementOverride[];  // per-element visual overrides from editor
 }
 
 // Complete parsed carousel — output of parser.parse()
@@ -85,6 +101,9 @@ export interface CarouselState {
   bodyLineHeight: number;     // body text line-height, default 1.5
   bodyMaxWidth: number;       // body text max-width as percentage, default 85
   headlineScale: number;      // headline size multiplier, default 1.0
+  // Editor
+  editMode: boolean;            // toggle between preview and edit mode
+  selectedElementId: string | null;  // currently selected element in editor
 }
 
 // Undo/redo history wrapper — separates UI concern from data model
@@ -114,4 +133,7 @@ export interface SlideProps {
   bodyLineHeight: number;
   bodyMaxWidth: number;
   headlineScale: number;
+  editMode: boolean;
+  selectedElementId: string | null;
+  onElementSelect?: (elementId: string) => void;
 }

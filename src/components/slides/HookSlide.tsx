@@ -1,17 +1,26 @@
 import type { SlideProps } from '@/types/carousel';
 import SlideLayout from './SlideLayout';
+import ElementWrapper from '@/components/editor/ElementWrapper';
 
 export default function HookSlide(props: SlideProps) {
-  const { slide, theme, dimensions, fontScale, contentGap, contentPadding, bodyMaxWidth, headlineScale, contentAlign } = props;
+  const { slide, theme, dimensions, fontScale, contentGap, contentPadding, bodyMaxWidth, headlineScale, contentAlign, editMode, selectedElementId, onElementSelect } = props;
   const scale = dimensions.width / 1080;
   const p = (px: number) => px * scale;
   const s = (px: number) => px * scale * fontScale;
   const centered = contentAlign === 'center';
 
+  const getOverride = (id: string) => slide.overrides?.find((o) => o.id === id);
+
   return (
     <SlideLayout {...props}>
       {slide.headline && (
-        <div
+        <ElementWrapper
+          elementId="headline"
+          editMode={editMode}
+          isSelected={selectedElementId === 'headline'}
+          override={getOverride('headline')}
+          scale={scale}
+          onSelect={onElementSelect}
           style={{
             fontSize: s(56 * headlineScale),
             fontWeight: 700,
@@ -23,10 +32,16 @@ export default function HookSlide(props: SlideProps) {
           }}
         >
           {slide.headline}
-        </div>
+        </ElementWrapper>
       )}
       {slide.sub && (
-        <div
+        <ElementWrapper
+          elementId="sub"
+          editMode={editMode}
+          isSelected={selectedElementId === 'sub'}
+          override={getOverride('sub')}
+          scale={scale}
+          onSelect={onElementSelect}
           style={{
             fontSize: s(20),
             fontWeight: 400,
@@ -38,11 +53,17 @@ export default function HookSlide(props: SlideProps) {
           }}
         >
           {slide.sub}
-        </div>
+        </ElementWrapper>
       )}
       {/* CTA: positioned bottom-right, outside text flow */}
       {slide.cta && (
-        <div
+        <ElementWrapper
+          elementId="cta"
+          editMode={editMode}
+          isSelected={selectedElementId === 'cta'}
+          override={getOverride('cta')}
+          scale={scale}
+          onSelect={onElementSelect}
           style={{
             position: 'absolute',
             bottom: p(contentPadding),
@@ -56,7 +77,7 @@ export default function HookSlide(props: SlideProps) {
           }}
         >
           {slide.cta}
-        </div>
+        </ElementWrapper>
       )}
     </SlideLayout>
   );
