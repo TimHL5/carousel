@@ -60,13 +60,14 @@ export default function ElementWrapper({
   if (!isVisible) return null;
 
   // Override styles: fontSize, fontWeight, color from ElementOverride
+  // Use !== undefined (not truthiness) so 0 values are applied correctly
   const overrideStyles: React.CSSProperties = {};
-  if (override?.fontSize) overrideStyles.fontSize = override.fontSize * scale;
-  if (override?.fontWeight) overrideStyles.fontWeight = override.fontWeight;
-  if (override?.color) overrideStyles.color = override.color;
-  if (override?.width) overrideStyles.width = override.width * scale;
-  if (override?.height) overrideStyles.height = override.height * scale;
-  if (override?.rotation) overrideStyles.transform = `rotate(${override.rotation}deg)`;
+  if (override?.fontSize !== undefined) overrideStyles.fontSize = override.fontSize * scale;
+  if (override?.fontWeight !== undefined) overrideStyles.fontWeight = override.fontWeight;
+  if (override?.color !== undefined) overrideStyles.color = override.color;
+  if (override?.width !== undefined) overrideStyles.width = override.width * scale;
+  if (override?.height !== undefined) overrideStyles.height = override.height * scale;
+  if (override?.rotation !== undefined) overrideStyles.transform = `rotate(${override.rotation}deg)`;
 
   const positionStyles: React.CSSProperties = hasPositionOverride
     ? {

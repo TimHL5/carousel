@@ -145,8 +145,16 @@ function carouselReducer(state: CarouselState, action: Action): CarouselState {
       return { ...state, rawText: action.text };
     case 'PARSE': {
       const parsed = parseCarousel(state.rawText);
+      // Preserve overrides from existing slides — merge by index+type match
+      const oldSlides = state.carousel?.slides || [];
+      parsed.slides = parsed.slides.map((newSlide, i) => {
+        const oldSlide = oldSlides[i];
+        if (oldSlide && oldSlide.type === newSlide.type && oldSlide.overrides?.length) {
+          return { ...newSlide, overrides: oldSlide.overrides };
+        }
+        return newSlide;
+      });
       // Only overwrite caption from parser if caption field was NOT manually edited
-      // (i.e., only set it on initial parse or when raw text caption actually changes)
       const parsedCaption = parsed.caption || '';
       const captionFromLastParse = state.carousel?.caption || '';
       const userEditedCaption = state.caption !== captionFromLastParse;
@@ -159,7 +167,7 @@ function carouselReducer(state: CarouselState, action: Action): CarouselState {
     }
     case 'SELECT_SLIDE': {
       const maxIdx = (state.carousel?.slides.length || 1) - 1;
-      return { ...state, selectedSlideIndex: Math.max(0, Math.min(action.index, maxIdx)) };
+      return { ...state, selectedSlideIndex: Math.max(0, Math.min(action.index, maxIdx)), selectedElementId: null };
     }
     case 'REORDER_SLIDES': {
       if (!state.carousel) return state;
@@ -221,6 +229,7 @@ function carouselReducer(state: CarouselState, action: Action): CarouselState {
       return { ...state, selectedElementId: action.id };
     case 'SET_ELEMENT_OVERRIDE': {
       if (!state.carousel) return state;
+      if (action.slideIndex < 0 || action.slideIndex >= state.carousel.slides.length) return state;
       const slides = [...state.carousel.slides];
       const slide = { ...slides[action.slideIndex] };
       const existing = (slide.overrides || []).filter((o) => o.id !== action.override.id);
@@ -230,6 +239,7 @@ function carouselReducer(state: CarouselState, action: Action): CarouselState {
     }
     case 'REMOVE_ELEMENT_OVERRIDE': {
       if (!state.carousel) return state;
+      if (action.slideIndex < 0 || action.slideIndex >= state.carousel.slides.length) return state;
       const slides = [...state.carousel.slides];
       const slide = { ...slides[action.slideIndex] };
       slide.overrides = (slide.overrides || []).filter((o) => o.id !== action.elementId);
@@ -415,7 +425,7 @@ export default function Home() {
             minHeight: 36,
           }}
         >
-          {state.editMode ? 'Edit Mode' : 'Preview'}
+          {state.editMode ? '← Preview' : 'Edit ✎'}
         </button>
       </header>
 
