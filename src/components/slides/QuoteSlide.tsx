@@ -1,8 +1,10 @@
 import type { SlideProps } from '@/types/carousel';
 import SlideLayout from './SlideLayout';
+import ElementWrapper from '@/components/editor/ElementWrapper';
 
 export default function QuoteSlide(props: SlideProps) {
-  const { slide, theme, style, dimensions, fontScale, accentBarWidth, contentGap, headlineScale } = props;
+  const { slide, theme, style, dimensions, fontScale, accentBarWidth, contentGap, headlineScale, editMode, selectedElementId, onElementSelect } = props;
+  const getOverride = (id: string) => slide.overrides?.find((o) => o.id === id);
   const scale = dimensions.width / 1080;
   const p = (px: number) => px * scale;
   const s = (px: number) => px * scale * fontScale;
@@ -24,17 +26,11 @@ export default function QuoteSlide(props: SlideProps) {
       )}
       <div>
         {slide.headline && (
-          <div
-            style={{
-              fontSize: s(40 * headlineScale),
-              fontWeight: 700,
-              lineHeight: 1.2,
-              color: theme.text,
-              marginBottom: p(contentGap),
-            }}
-          >
+          <ElementWrapper elementId="quote-text" editMode={editMode} isSelected={selectedElementId === 'quote-text'} override={getOverride('quote-text')} scale={scale} onSelect={onElementSelect} style={{
+              fontSize: s(40 * headlineScale), fontWeight: 700, lineHeight: 1.2, color: theme.text, marginBottom: p(contentGap),
+            }}>
             {slide.headline}
-          </div>
+          </ElementWrapper>
         )}
         {slide.sub && (
           <div

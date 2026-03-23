@@ -1,8 +1,10 @@
 import type { SlideProps } from '@/types/carousel';
 import SlideLayout from './SlideLayout';
+import ElementWrapper from '@/components/editor/ElementWrapper';
 
 export default function StepSlide(props: SlideProps) {
-  const { slide, theme, style, dimensions, fontScale, contentGap, accentBarWidth, contentPadding, bodyLineHeight, bodyMaxWidth, headlineScale, contentAlign } = props;
+  const { slide, theme, style, dimensions, fontScale, contentGap, accentBarWidth, contentPadding, bodyLineHeight, bodyMaxWidth, headlineScale, contentAlign, editMode, selectedElementId, onElementSelect } = props;
+  const getOverride = (id: string) => slide.overrides?.find((o) => o.id === id);
   const scale = dimensions.width / 1080;
   const p = (px: number) => px * scale;
   const s = (px: number) => px * scale * fontScale;
@@ -68,37 +70,22 @@ export default function StepSlide(props: SlideProps) {
       )}
 
       {slide.headline && (
-        <div
-          style={{
-            fontSize: s(40 * headlineScale),
-            fontWeight: 700,
-            lineHeight: 1.2,
-            color: theme.text,
-            marginBottom: p(contentGap / 2),
-            position: 'relative',
-            zIndex: 2,
-          }}
-        >
+        <ElementWrapper elementId="headline" editMode={editMode} isSelected={selectedElementId === 'headline'} override={getOverride('headline')} scale={scale} onSelect={onElementSelect} style={{
+            fontSize: s(40 * headlineScale), fontWeight: 700, lineHeight: 1.2, color: theme.text,
+            marginBottom: p(contentGap / 2), position: 'relative', zIndex: 2,
+          }}>
           {slide.headline}
-        </div>
+        </ElementWrapper>
       )}
 
       {slide.body && (
-        <div
-          style={{
-            fontSize: s(24),
-            fontWeight: 400,
-            lineHeight: bodyLineHeight,
-            color: isMinimal ? theme.text : theme.secondary,
-            maxWidth: `${bodyMaxWidth}%`,
-            ...(centered && { margin: '0 auto' }),
-            whiteSpace: 'pre-line' as const,
-            position: 'relative',
-            zIndex: 2,
-          }}
-        >
+        <ElementWrapper elementId="body" editMode={editMode} isSelected={selectedElementId === 'body'} override={getOverride('body')} scale={scale} onSelect={onElementSelect} style={{
+            fontSize: s(24), fontWeight: 400, lineHeight: bodyLineHeight,
+            color: isMinimal ? theme.text : theme.secondary, maxWidth: `${bodyMaxWidth}%`,
+            ...(centered && { margin: '0 auto' }), whiteSpace: 'pre-line' as const, position: 'relative', zIndex: 2,
+          }}>
           {slide.body}
-        </div>
+        </ElementWrapper>
       )}
     </>
   );

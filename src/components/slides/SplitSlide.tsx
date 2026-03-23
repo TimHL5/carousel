@@ -1,8 +1,10 @@
 import type { SlideProps } from '@/types/carousel';
 import SlideLayout from './SlideLayout';
+import ElementWrapper from '@/components/editor/ElementWrapper';
 
 export default function SplitSlide(props: SlideProps) {
-  const { slide, theme, style, dimensions, fontScale, contentGap, bodyLineHeight, headlineScale } = props;
+  const { slide, theme, style, dimensions, fontScale, contentGap, bodyLineHeight, headlineScale, editMode, selectedElementId, onElementSelect } = props;
+  const getOverride = (id: string) => slide.overrides?.find((o) => o.id === id);
   const scale = dimensions.width / 1080;
   const p = (px: number) => px * scale;
   const s = (px: number) => px * scale * fontScale;
@@ -97,17 +99,11 @@ export default function SplitSlide(props: SlideProps) {
   return (
     <SlideLayout {...props} contentJustify="center">
       {slide.headline && (
-        <div
-          style={{
-            fontSize: s(40 * headlineScale),
-            fontWeight: 700,
-            lineHeight: 1.2,
-            color: theme.text,
-            marginBottom: p(contentGap),
-          }}
-        >
+        <ElementWrapper elementId="headline" editMode={editMode} isSelected={selectedElementId === 'headline'} override={getOverride('headline')} scale={scale} onSelect={onElementSelect} style={{
+            fontSize: s(40 * headlineScale), fontWeight: 700, lineHeight: 1.2, color: theme.text, marginBottom: p(contentGap),
+          }}>
           {slide.headline}
-        </div>
+        </ElementWrapper>
       )}
 
       {isBoldCard ? (

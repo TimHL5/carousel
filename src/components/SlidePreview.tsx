@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import SlideRenderer from '@/components/slides/SlideRenderer';
+import SelectionOverlay from '@/components/editor/SelectionOverlay';
 import type { SlideData, Theme, StyleVariant } from '@/types/carousel';
 
 interface SlidePreviewProps {
@@ -113,7 +114,6 @@ export default function SlidePreview({
 
   return (
     <div
-      ref={containerRef}
       tabIndex={0}
       onKeyDown={handleKeyDown}
       style={{
@@ -128,12 +128,20 @@ export default function SlidePreview({
     >
       {/* Visible preview */}
       <div
+        ref={containerRef}
+        onClick={(e) => {
+          // Click on empty canvas area → deselect
+          if (editMode && e.target === e.currentTarget) {
+            onElementSelect('');
+          }
+        }}
         style={{
           width: dimensions.width * previewScale,
           height: dimensions.height * previewScale,
-          overflow: 'hidden',
+          overflow: editMode ? 'visible' : 'hidden',
           borderRadius: 12,
-          border: '1px solid rgba(255,255,255,0.08)',
+          border: editMode ? '2px solid rgba(59, 130, 246, 0.3)' : '1px solid rgba(255,255,255,0.08)',
+          position: 'relative',
         }}
       >
         <div style={{ transform: `scale(${previewScale})`, transformOrigin: 'top left' }}>
@@ -159,6 +167,14 @@ export default function SlidePreview({
             onElementSelect={onElementSelect}
           />
         </div>
+        {/* Selection overlay — shows handles on selected element */}
+        {editMode && (
+          <SelectionOverlay
+            selectedElementId={selectedElementId}
+            canvasRef={containerRef}
+            previewScale={previewScale}
+          />
+        )}
       </div>
 
       {/* Navigation */}
