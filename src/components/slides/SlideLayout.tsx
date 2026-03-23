@@ -14,6 +14,9 @@ export default function SlideLayout({
   dimensions,
   showLogo,
   fontScale,
+  contentPadding,
+  contentGap,
+  contentAlign,
   contentJustify = 'center',
 }: SlideLayoutProps) {
   const scale = dimensions.width / 1080;
@@ -58,9 +61,10 @@ export default function SlideLayout({
           display: 'flex',
           flexDirection: 'column',
           justifyContent: contentJustify,
-          padding: p(48),
+          padding: p(contentPadding),
           position: 'relative',
           zIndex: 2,
+          textAlign: contentAlign,
         }}
       >
         {children}
@@ -71,8 +75,8 @@ export default function SlideLayout({
         <div
           style={{
             position: 'absolute',
-            bottom: p(48),
-            right: p(48),
+            bottom: p(contentPadding),
+            right: p(contentPadding),
             fontSize: s(14),
             fontWeight: 500,
             color: theme.accent,

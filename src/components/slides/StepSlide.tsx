@@ -2,7 +2,7 @@ import type { SlideProps } from '@/types/carousel';
 import SlideLayout from './SlideLayout';
 
 export default function StepSlide(props: SlideProps) {
-  const { slide, theme, style, dimensions, fontScale } = props;
+  const { slide, theme, style, dimensions, fontScale, contentGap, accentBarWidth, contentPadding } = props;
   const scale = dimensions.width / 1080;
   const p = (px: number) => px * scale;
   const s = (px: number) => px * scale * fontScale;
@@ -17,8 +17,8 @@ export default function StepSlide(props: SlideProps) {
         <div
           style={{
             position: 'absolute',
-            top: p(48),
-            left: p(48),
+            top: p(contentPadding),
+            left: p(contentPadding),
             fontSize: s(160),
             fontWeight: 700,
             lineHeight: 1,
@@ -57,7 +57,7 @@ export default function StepSlide(props: SlideProps) {
             fontSize: s(20),
             fontWeight: 500,
             color: theme.accent,
-            marginBottom: p(12),
+            marginBottom: p(contentGap / 2),
             position: 'relative',
             zIndex: 2,
           }}
@@ -73,7 +73,7 @@ export default function StepSlide(props: SlideProps) {
             fontWeight: 700,
             lineHeight: 1.2,
             color: theme.text,
-            marginBottom: p(12),
+            marginBottom: p(contentGap / 2),
             position: 'relative',
             zIndex: 2,
           }}
@@ -104,14 +104,14 @@ export default function StepSlide(props: SlideProps) {
   return (
     <SlideLayout {...props} contentJustify="center">
       {/* Accent bar — clean-step only */}
-      {!isBoldCard && !isMinimal && (
+      {!isBoldCard && !isMinimal && accentBarWidth > 0 && (
         <div
           style={{
             position: 'absolute',
             left: 0,
             top: '15%',
             bottom: '15%',
-            width: p(4),
+            width: p(accentBarWidth),
             backgroundColor: theme.accent,
             zIndex: 2,
           }}

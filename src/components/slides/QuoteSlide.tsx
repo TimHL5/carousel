@@ -2,7 +2,7 @@ import type { SlideProps } from '@/types/carousel';
 import SlideLayout from './SlideLayout';
 
 export default function QuoteSlide(props: SlideProps) {
-  const { slide, theme, style, dimensions, fontScale } = props;
+  const { slide, theme, style, dimensions, fontScale, accentBarWidth, contentGap } = props;
   const scale = dimensions.width / 1080;
   const p = (px: number) => px * scale;
   const s = (px: number) => px * scale * fontScale;
@@ -12,10 +12,10 @@ export default function QuoteSlide(props: SlideProps) {
   const quoteContent = (
     <div style={{ display: 'flex', gap: p(16) }}>
       {/* Accent bar for quote — clean-step and bold-card */}
-      {!isMinimal && (
+      {!isMinimal && accentBarWidth > 0 && (
         <div
           style={{
-            width: p(4),
+            width: p(accentBarWidth),
             backgroundColor: theme.accent,
             borderRadius: p(2),
             flexShrink: 0,

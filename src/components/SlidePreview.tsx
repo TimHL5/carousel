@@ -13,6 +13,10 @@ interface SlidePreviewProps {
   dimensions: { width: number; height: number };
   showLogo: boolean;
   fontScale: number;
+  contentPadding: number;
+  contentGap: number;
+  accentBarWidth: number;
+  contentAlign: 'left' | 'center';
   onNavigate: (index: number) => void;
   onExportSingle: (index: number) => void;
   onCopySlide: (index: number) => void;
@@ -29,6 +33,10 @@ export default function SlidePreview({
   dimensions,
   showLogo,
   fontScale,
+  contentPadding,
+  contentGap,
+  accentBarWidth,
+  contentAlign,
   onNavigate,
   onExportSingle,
   onCopySlide,
@@ -123,6 +131,10 @@ export default function SlidePreview({
             dimensions={dimensions}
             showLogo={showLogo}
             fontScale={fontScale}
+            contentPadding={contentPadding}
+            contentGap={contentGap}
+            accentBarWidth={accentBarWidth}
+            contentAlign={contentAlign}
           />
         </div>
       </div>
@@ -178,6 +190,10 @@ export default function SlidePreview({
               dimensions={dimensions}
               showLogo={showLogo}
               fontScale={fontScale}
+              contentPadding={contentPadding}
+              contentGap={contentGap}
+              accentBarWidth={accentBarWidth}
+              contentAlign={contentAlign}
             />
           </div>
         ))}

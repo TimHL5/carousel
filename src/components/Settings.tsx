@@ -29,6 +29,16 @@ interface SettingsProps {
   onExportPdf: () => void;
   onUndo: () => void;
   onRedo: () => void;
+  // Layout
+  contentPadding: number;
+  contentGap: number;
+  accentBarWidth: number;
+  contentAlign: 'left' | 'center';
+  onContentPaddingChange: (v: number) => void;
+  onContentGapChange: (v: number) => void;
+  onAccentBarWidthChange: (v: number) => void;
+  onContentAlignChange: (v: 'left' | 'center') => void;
+  onResetLayout: () => void;
 }
 
 // Mini hook slide for theme previews
@@ -52,6 +62,8 @@ export default function Settings(props: SettingsProps) {
     customThemes, totalSlides, exporting, canUndo, canRedo,
     onThemeChange, onStyleChange, onPresetChange, onLogoToggle, onFontScaleChange,
     onCustomThemeSave, onCustomThemeDelete, onExportZip, onExportPdf, onUndo, onRedo,
+    contentPadding, contentGap, accentBarWidth, contentAlign,
+    onContentPaddingChange, onContentGapChange, onAccentBarWidthChange, onContentAlignChange, onResetLayout,
   } = props;
 
   const [showCustom, setShowCustom] = useState(false);
@@ -132,6 +144,10 @@ export default function Settings(props: SettingsProps) {
                   dimensions={PREVIEW_DIMS}
                   showLogo={false}
                   fontScale={1}
+                  contentPadding={12}
+                  contentGap={6}
+                  accentBarWidth={1}
+                  contentAlign="left"
                 />
               </div>
             </div>
@@ -199,6 +215,60 @@ export default function Settings(props: SettingsProps) {
         <input type="checkbox" checked={showLogo} onChange={onLogoToggle} style={{ accentColor: '#6AC670' }} />
         Show MLV logo on slides
       </label>
+
+      {/* Layout */}
+      <div style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.06)', marginBottom: 16 }} />
+
+      <div style={{ ...labelStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span>Layout</span>
+        <button
+          onClick={onResetLayout}
+          style={{ background: 'none', border: 'none', color: '#6AC670', fontSize: 10, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
+        >
+          Reset
+        </button>
+      </div>
+
+      <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 4 }}>Padding: {contentPadding}px</div>
+      <input
+        type="range" min={24} max={72} step={4} value={contentPadding}
+        onChange={(e) => onContentPaddingChange(parseInt(e.target.value))}
+        style={{ width: '100%', marginBottom: 12, accentColor: '#6AC670' }}
+      />
+
+      <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 4 }}>Content Gap: {contentGap}px</div>
+      <input
+        type="range" min={12} max={48} step={4} value={contentGap}
+        onChange={(e) => onContentGapChange(parseInt(e.target.value))}
+        style={{ width: '100%', marginBottom: 12, accentColor: '#6AC670' }}
+      />
+
+      <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 4 }}>Accent Bar: {accentBarWidth === 0 ? 'Off' : `${accentBarWidth}px`}</div>
+      <input
+        type="range" min={0} max={8} step={1} value={accentBarWidth}
+        onChange={(e) => onAccentBarWidthChange(parseInt(e.target.value))}
+        style={{ width: '100%', marginBottom: 12, accentColor: '#6AC670' }}
+      />
+
+      <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 4 }}>Text Align</div>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 24 }}>
+        {(['left', 'center'] as const).map((align) => (
+          <button
+            key={align}
+            onClick={() => onContentAlignChange(align)}
+            style={{
+              flex: 1, padding: '6px 0', fontSize: 11, fontWeight: 500,
+              backgroundColor: contentAlign === align ? '#6AC670' : 'transparent',
+              color: contentAlign === align ? '#0A0A0A' : '#9CA3AF',
+              border: contentAlign === align ? 'none' : '1px solid rgba(255,255,255,0.06)',
+              borderRadius: 4, cursor: 'pointer', fontFamily: 'inherit',
+              textTransform: 'capitalize',
+            }}
+          >
+            {align}
+          </button>
+        ))}
+      </div>
 
       {/* Divider */}
       <div style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.06)', marginBottom: 16 }} />

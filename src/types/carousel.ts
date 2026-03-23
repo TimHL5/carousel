@@ -76,6 +76,11 @@ export interface CarouselState {
   fontScale: number;
   caption: string;
   customThemes: Theme[];
+  // Layout customization
+  contentPadding: number;   // slide edge padding in px (base 1080), default 48
+  contentGap: number;       // gap between text blocks in px, default 24
+  accentBarWidth: number;   // accent bar width in px, 0 = hidden, default 4
+  contentAlign: 'left' | 'center'; // text alignment, default 'left'
 }
 
 // Undo/redo history wrapper — separates UI concern from data model
@@ -97,4 +102,8 @@ export interface SlideProps {
   dimensions: { width: number; height: number };
   showLogo: boolean;
   fontScale: number;
+  contentPadding: number;
+  contentGap: number;
+  accentBarWidth: number;
+  contentAlign: 'left' | 'center';
 }

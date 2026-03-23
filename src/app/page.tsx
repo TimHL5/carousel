@@ -124,7 +124,12 @@ type Action =
   | { type: 'TOGGLE_LOGO' }
   | { type: 'SET_CAPTION'; caption: string }
   | { type: 'SAVE_CUSTOM_THEME'; theme: Theme }
-  | { type: 'DELETE_CUSTOM_THEME'; id: string };
+  | { type: 'DELETE_CUSTOM_THEME'; id: string }
+  | { type: 'SET_CONTENT_PADDING'; value: number }
+  | { type: 'SET_CONTENT_GAP'; value: number }
+  | { type: 'SET_ACCENT_BAR_WIDTH'; value: number }
+  | { type: 'SET_CONTENT_ALIGN'; value: 'left' | 'center' }
+  | { type: 'RESET_LAYOUT' };
 
 function carouselReducer(state: CarouselState, action: Action): CarouselState {
   switch (action.type) {
@@ -184,6 +189,16 @@ function carouselReducer(state: CarouselState, action: Action): CarouselState {
         selectedThemeId: state.selectedThemeId === action.id ? DEFAULT_THEME_ID : state.selectedThemeId,
       };
     }
+    case 'SET_CONTENT_PADDING':
+      return { ...state, contentPadding: action.value };
+    case 'SET_CONTENT_GAP':
+      return { ...state, contentGap: action.value };
+    case 'SET_ACCENT_BAR_WIDTH':
+      return { ...state, accentBarWidth: action.value };
+    case 'SET_CONTENT_ALIGN':
+      return { ...state, contentAlign: action.value };
+    case 'RESET_LAYOUT':
+      return { ...state, contentPadding: 48, contentGap: 24, accentBarWidth: 4, contentAlign: 'left' as const };
     default:
       return state;
   }
@@ -225,6 +240,10 @@ function getInitialState(): CarouselState {
     fontScale: 1,
     caption: parsed.caption || '',
     customThemes,
+    contentPadding: 48,
+    contentGap: 24,
+    accentBarWidth: 4,
+    contentAlign: 'left',
   };
 }
 
@@ -235,7 +254,7 @@ export default function Home() {
   const [history, dispatch, { canUndo, canRedo }] = useUndoReducer(
     carouselReducer,
     getInitialState(),
-    ['SET_RAW_TEXT', 'SET_CAPTION', 'SET_FONT_SCALE'],
+    ['SET_RAW_TEXT', 'SET_CAPTION', 'SET_FONT_SCALE', 'SET_CONTENT_PADDING', 'SET_CONTENT_GAP', 'SET_ACCENT_BAR_WIDTH'],
   );
   const state = history.present;
 
@@ -369,6 +388,10 @@ export default function Home() {
             dimensions={dims}
             showLogo={state.showLogo}
             fontScale={state.fontScale}
+            contentPadding={state.contentPadding}
+            contentGap={state.contentGap}
+            accentBarWidth={state.accentBarWidth}
+            contentAlign={state.contentAlign}
             onNavigate={(i) => dispatch({ type: 'SELECT_SLIDE', index: i })}
             onExportSingle={handleExportSingle}
             onCopySlide={handleCopySlide}
@@ -405,6 +428,15 @@ export default function Home() {
             onExportPdf={handleExportPdf}
             onUndo={() => dispatch({ type: 'UNDO' })}
             onRedo={() => dispatch({ type: 'REDO' })}
+            contentPadding={state.contentPadding}
+            contentGap={state.contentGap}
+            accentBarWidth={state.accentBarWidth}
+            contentAlign={state.contentAlign}
+            onContentPaddingChange={(v) => dispatch({ type: 'SET_CONTENT_PADDING', value: v })}
+            onContentGapChange={(v) => dispatch({ type: 'SET_CONTENT_GAP', value: v })}
+            onAccentBarWidthChange={(v) => dispatch({ type: 'SET_ACCENT_BAR_WIDTH', value: v })}
+            onContentAlignChange={(v) => dispatch({ type: 'SET_CONTENT_ALIGN', value: v })}
+            onResetLayout={() => dispatch({ type: 'RESET_LAYOUT' })}
           />
         </div>
       </div>
