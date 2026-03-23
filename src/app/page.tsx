@@ -117,17 +117,20 @@ export default function Home() {
             </div>
             <div
               style={{
-                transform: `scale(${previewScale})`,
-                transformOrigin: 'top left',
                 width: dims.width * previewScale,
                 height: dims.height * previewScale,
                 overflow: 'hidden',
                 borderRadius: 8,
                 border: '1px solid rgba(255,255,255,0.12)',
-                boxShadow: '0 0 0 1px rgba(255,255,255,0.04)',
-                backgroundColor: '#0A0A0A',
+                position: 'relative',
               }}
             >
+              <div
+                style={{
+                  transform: `scale(${previewScale})`,
+                  transformOrigin: 'top left',
+                }}
+              >
               <SlideRenderer
                 slide={slide}
                 slideIndex={i}
@@ -138,6 +141,7 @@ export default function Home() {
                 showLogo={false}
                 fontScale={1}
               />
+              </div>
             </div>
           </div>
         ))}
