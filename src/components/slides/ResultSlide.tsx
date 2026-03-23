@@ -2,7 +2,7 @@ import type { SlideProps } from '@/types/carousel';
 import SlideLayout from './SlideLayout';
 
 export default function ResultSlide(props: SlideProps) {
-  const { slide, theme, style, dimensions, fontScale, contentGap } = props;
+  const { slide, theme, style, dimensions, fontScale, contentGap, bodyLineHeight, bodyMaxWidth, headlineScale } = props;
   const scale = dimensions.width / 1080;
   const p = (px: number) => px * scale;
   const s = (px: number) => px * scale * fontScale;
@@ -36,7 +36,7 @@ export default function ResultSlide(props: SlideProps) {
       {slide.headline && (
         <div
           style={{
-            fontSize: s(40),
+            fontSize: s(40 * headlineScale),
             fontWeight: 700,
             lineHeight: 1.2,
             color: theme.text,
@@ -51,7 +51,7 @@ export default function ResultSlide(props: SlideProps) {
           style={{
             fontSize: s(24),
             fontWeight: 400,
-            lineHeight: 1.5,
+            lineHeight: bodyLineHeight,
             color: isMinimal ? theme.text : theme.secondary,
           }}
         >

@@ -2,7 +2,7 @@ import type { SlideProps } from '@/types/carousel';
 import SlideLayout from './SlideLayout';
 
 export default function SplitSlide(props: SlideProps) {
-  const { slide, theme, style, dimensions, fontScale, contentGap } = props;
+  const { slide, theme, style, dimensions, fontScale, contentGap, bodyLineHeight, headlineScale } = props;
   const scale = dimensions.width / 1080;
   const p = (px: number) => px * scale;
   const s = (px: number) => px * scale * fontScale;
@@ -45,7 +45,7 @@ export default function SplitSlide(props: SlideProps) {
           style={{
             fontSize: s(20),
             fontWeight: 400,
-            lineHeight: 1.5,
+            lineHeight: bodyLineHeight,
             color: theme.secondary,
             whiteSpace: 'pre-line' as const,
           }}
@@ -83,7 +83,7 @@ export default function SplitSlide(props: SlideProps) {
           style={{
             fontSize: s(20),
             fontWeight: 400,
-            lineHeight: 1.5,
+            lineHeight: bodyLineHeight,
             color: theme.secondary,
             whiteSpace: 'pre-line' as const,
           }}
@@ -99,7 +99,7 @@ export default function SplitSlide(props: SlideProps) {
       {slide.headline && (
         <div
           style={{
-            fontSize: s(40),
+            fontSize: s(40 * headlineScale),
             fontWeight: 700,
             lineHeight: 1.2,
             color: theme.text,

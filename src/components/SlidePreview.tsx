@@ -17,6 +17,10 @@ interface SlidePreviewProps {
   contentGap: number;
   accentBarWidth: number;
   contentAlign: 'left' | 'center';
+  verticalAlign: 'top' | 'center' | 'bottom';
+  bodyLineHeight: number;
+  bodyMaxWidth: number;
+  headlineScale: number;
   onNavigate: (index: number) => void;
   onExportSingle: (index: number) => void;
   onCopySlide: (index: number) => void;
@@ -37,6 +41,10 @@ export default function SlidePreview({
   contentGap,
   accentBarWidth,
   contentAlign,
+  verticalAlign,
+  bodyLineHeight,
+  bodyMaxWidth,
+  headlineScale,
   onNavigate,
   onExportSingle,
   onCopySlide,
@@ -136,6 +144,10 @@ export default function SlidePreview({
             contentGap={contentGap}
             accentBarWidth={accentBarWidth}
             contentAlign={contentAlign}
+            verticalAlign={verticalAlign}
+            bodyLineHeight={bodyLineHeight}
+            bodyMaxWidth={bodyMaxWidth}
+            headlineScale={headlineScale}
           />
         </div>
       </div>
@@ -195,6 +207,10 @@ export default function SlidePreview({
               contentGap={contentGap}
               accentBarWidth={accentBarWidth}
               contentAlign={contentAlign}
+              verticalAlign={verticalAlign}
+              bodyLineHeight={bodyLineHeight}
+              bodyMaxWidth={bodyMaxWidth}
+              headlineScale={headlineScale}
             />
           </div>
         ))}

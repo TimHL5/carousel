@@ -38,6 +38,14 @@ interface SettingsProps {
   onContentGapChange: (v: number) => void;
   onAccentBarWidthChange: (v: number) => void;
   onContentAlignChange: (v: 'left' | 'center') => void;
+  verticalAlign: 'top' | 'center' | 'bottom';
+  bodyLineHeight: number;
+  bodyMaxWidth: number;
+  headlineScale: number;
+  onVerticalAlignChange: (v: 'top' | 'center' | 'bottom') => void;
+  onBodyLineHeightChange: (v: number) => void;
+  onBodyMaxWidthChange: (v: number) => void;
+  onHeadlineScaleChange: (v: number) => void;
   onResetLayout: () => void;
 }
 
@@ -63,7 +71,10 @@ export default function Settings(props: SettingsProps) {
     onThemeChange, onStyleChange, onPresetChange, onLogoToggle, onFontScaleChange,
     onCustomThemeSave, onCustomThemeDelete, onExportZip, onExportPdf, onUndo, onRedo,
     contentPadding, contentGap, accentBarWidth, contentAlign,
-    onContentPaddingChange, onContentGapChange, onAccentBarWidthChange, onContentAlignChange, onResetLayout,
+    onContentPaddingChange, onContentGapChange, onAccentBarWidthChange, onContentAlignChange,
+    verticalAlign, bodyLineHeight, bodyMaxWidth, headlineScale,
+    onVerticalAlignChange, onBodyLineHeightChange, onBodyMaxWidthChange, onHeadlineScaleChange,
+    onResetLayout,
   } = props;
 
   const [showCustom, setShowCustom] = useState(false);
@@ -148,6 +159,10 @@ export default function Settings(props: SettingsProps) {
                   contentGap={6}
                   accentBarWidth={1}
                   contentAlign="left"
+                  verticalAlign="center"
+                  bodyLineHeight={1.5}
+                  bodyMaxWidth={85}
+                  headlineScale={1}
                 />
               </div>
             </div>
@@ -269,6 +284,51 @@ export default function Settings(props: SettingsProps) {
           </button>
         ))}
       </div>
+
+      {/* Vertical Align */}
+      <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 4 }}>Vertical Align</div>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
+        {(['top', 'center', 'bottom'] as const).map((v) => (
+          <button
+            key={v}
+            onClick={() => onVerticalAlignChange(v)}
+            style={{
+              flex: 1, padding: '8px 0', fontSize: 11, fontWeight: 500, minHeight: 36,
+              backgroundColor: verticalAlign === v ? '#6AC670' : 'transparent',
+              color: verticalAlign === v ? '#0A0A0A' : '#9CA3AF',
+              border: verticalAlign === v ? 'none' : '1px solid rgba(255,255,255,0.06)',
+              borderRadius: 4, cursor: 'pointer', fontFamily: 'inherit',
+              textTransform: 'capitalize',
+            }}
+          >
+            {v}
+          </button>
+        ))}
+      </div>
+
+      {/* Line Height */}
+      <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 4 }}>Line Height: {bodyLineHeight.toFixed(1)}</div>
+      <input
+        type="range" min={1.2} max={2.0} step={0.1} value={bodyLineHeight}
+        onChange={(e) => onBodyLineHeightChange(parseFloat(e.target.value))}
+        style={{ width: '100%', marginBottom: 12, accentColor: '#6AC670' }}
+      />
+
+      {/* Body Max Width */}
+      <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 4 }}>Body Width: {bodyMaxWidth}%</div>
+      <input
+        type="range" min={60} max={100} step={5} value={bodyMaxWidth}
+        onChange={(e) => onBodyMaxWidthChange(parseInt(e.target.value))}
+        style={{ width: '100%', marginBottom: 12, accentColor: '#6AC670' }}
+      />
+
+      {/* Headline Scale */}
+      <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 4 }}>Headline Size: {Math.round(headlineScale * 100)}%</div>
+      <input
+        type="range" min={0.7} max={1.3} step={0.05} value={headlineScale}
+        onChange={(e) => onHeadlineScaleChange(parseFloat(e.target.value))}
+        style={{ width: '100%', marginBottom: 24, accentColor: '#6AC670' }}
+      />
 
       {/* Divider */}
       <div style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.06)', marginBottom: 16 }} />

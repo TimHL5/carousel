@@ -2,7 +2,7 @@ import type { SlideProps } from '@/types/carousel';
 import SlideLayout from './SlideLayout';
 
 export default function CloseSlide(props: SlideProps) {
-  const { slide, theme, style, dimensions, fontScale, contentGap } = props;
+  const { slide, theme, style, dimensions, fontScale, contentGap, headlineScale } = props;
   const scale = dimensions.width / 1080;
   const p = (px: number) => px * scale;
   const s = (px: number) => px * scale * fontScale;
@@ -13,7 +13,7 @@ export default function CloseSlide(props: SlideProps) {
       {slide.headline && (
         <div
           style={{
-            fontSize: s(40),
+            fontSize: s(40 * headlineScale),
             fontWeight: 700,
             lineHeight: 1.2,
             color: theme.text,

@@ -81,6 +81,10 @@ export interface CarouselState {
   contentGap: number;       // gap between text blocks in px, default 24
   accentBarWidth: number;   // accent bar width in px, 0 = hidden, default 4
   contentAlign: 'left' | 'center'; // text alignment, default 'left'
+  verticalAlign: 'top' | 'center' | 'bottom'; // content vertical position, default 'center'
+  bodyLineHeight: number;     // body text line-height, default 1.5
+  bodyMaxWidth: number;       // body text max-width as percentage, default 85
+  headlineScale: number;      // headline size multiplier, default 1.0
 }
 
 // Undo/redo history wrapper — separates UI concern from data model
@@ -106,4 +110,8 @@ export interface SlideProps {
   contentGap: number;
   accentBarWidth: number;
   contentAlign: 'left' | 'center';
+  verticalAlign: 'top' | 'center' | 'bottom';
+  bodyLineHeight: number;
+  bodyMaxWidth: number;
+  headlineScale: number;
 }

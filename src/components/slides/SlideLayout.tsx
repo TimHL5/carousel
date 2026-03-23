@@ -17,8 +17,12 @@ export default function SlideLayout({
   contentPadding,
   contentGap,
   contentAlign,
-  contentJustify = 'center',
+  verticalAlign,
+  contentJustify,
 }: SlideLayoutProps) {
+  // contentJustify overrides verticalAlign (used by Close/CloseCTA for bottom alignment)
+  const VALIGN_MAP = { top: 'flex-start', center: 'center', bottom: 'flex-end' } as const;
+  const justify = contentJustify || VALIGN_MAP[verticalAlign] || 'center';
   const scale = dimensions.width / 1080;
   const p = (px: number) => px * scale;
   const s = (px: number) => px * scale * fontScale;
@@ -60,7 +64,7 @@ export default function SlideLayout({
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: contentJustify,
+          justifyContent: justify,
           padding: p(contentPadding),
           position: 'relative',
           zIndex: 2,

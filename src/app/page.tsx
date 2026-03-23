@@ -129,6 +129,10 @@ type Action =
   | { type: 'SET_CONTENT_GAP'; value: number }
   | { type: 'SET_ACCENT_BAR_WIDTH'; value: number }
   | { type: 'SET_CONTENT_ALIGN'; value: 'left' | 'center' }
+  | { type: 'SET_VERTICAL_ALIGN'; value: 'top' | 'center' | 'bottom' }
+  | { type: 'SET_BODY_LINE_HEIGHT'; value: number }
+  | { type: 'SET_BODY_MAX_WIDTH'; value: number }
+  | { type: 'SET_HEADLINE_SCALE'; value: number }
   | { type: 'RESET_LAYOUT' };
 
 function carouselReducer(state: CarouselState, action: Action): CarouselState {
@@ -197,8 +201,16 @@ function carouselReducer(state: CarouselState, action: Action): CarouselState {
       return { ...state, accentBarWidth: action.value };
     case 'SET_CONTENT_ALIGN':
       return { ...state, contentAlign: action.value };
+    case 'SET_VERTICAL_ALIGN':
+      return { ...state, verticalAlign: action.value };
+    case 'SET_BODY_LINE_HEIGHT':
+      return { ...state, bodyLineHeight: action.value };
+    case 'SET_BODY_MAX_WIDTH':
+      return { ...state, bodyMaxWidth: action.value };
+    case 'SET_HEADLINE_SCALE':
+      return { ...state, headlineScale: action.value };
     case 'RESET_LAYOUT':
-      return { ...state, contentPadding: 48, contentGap: 24, accentBarWidth: 4, contentAlign: 'left' as const };
+      return { ...state, contentPadding: 48, contentGap: 24, accentBarWidth: 4, contentAlign: 'left' as const, verticalAlign: 'center' as const, bodyLineHeight: 1.5, bodyMaxWidth: 85, headlineScale: 1.0 };
     default:
       return state;
   }
@@ -244,6 +256,10 @@ function getInitialState(): CarouselState {
     contentGap: 24,
     accentBarWidth: 4,
     contentAlign: 'left',
+    verticalAlign: 'center',
+    bodyLineHeight: 1.5,
+    bodyMaxWidth: 85,
+    headlineScale: 1.0,
   };
 }
 
@@ -254,7 +270,7 @@ export default function Home() {
   const [history, dispatch, { canUndo, canRedo }] = useUndoReducer(
     carouselReducer,
     getInitialState(),
-    ['SET_RAW_TEXT', 'SET_CAPTION', 'SET_FONT_SCALE', 'SET_CONTENT_PADDING', 'SET_CONTENT_GAP', 'SET_ACCENT_BAR_WIDTH'],
+    ['SET_RAW_TEXT', 'SET_CAPTION', 'SET_FONT_SCALE', 'SET_CONTENT_PADDING', 'SET_CONTENT_GAP', 'SET_ACCENT_BAR_WIDTH', 'SET_BODY_LINE_HEIGHT', 'SET_BODY_MAX_WIDTH', 'SET_HEADLINE_SCALE'],
   );
   const state = history.present;
 
@@ -392,6 +408,10 @@ export default function Home() {
             contentGap={state.contentGap}
             accentBarWidth={state.accentBarWidth}
             contentAlign={state.contentAlign}
+            verticalAlign={state.verticalAlign}
+            bodyLineHeight={state.bodyLineHeight}
+            bodyMaxWidth={state.bodyMaxWidth}
+            headlineScale={state.headlineScale}
             onNavigate={(i) => dispatch({ type: 'SELECT_SLIDE', index: i })}
             onExportSingle={handleExportSingle}
             onCopySlide={handleCopySlide}
@@ -436,6 +456,14 @@ export default function Home() {
             onContentGapChange={(v) => dispatch({ type: 'SET_CONTENT_GAP', value: v })}
             onAccentBarWidthChange={(v) => dispatch({ type: 'SET_ACCENT_BAR_WIDTH', value: v })}
             onContentAlignChange={(v) => dispatch({ type: 'SET_CONTENT_ALIGN', value: v })}
+            verticalAlign={state.verticalAlign}
+            bodyLineHeight={state.bodyLineHeight}
+            bodyMaxWidth={state.bodyMaxWidth}
+            headlineScale={state.headlineScale}
+            onVerticalAlignChange={(v) => dispatch({ type: 'SET_VERTICAL_ALIGN', value: v })}
+            onBodyLineHeightChange={(v) => dispatch({ type: 'SET_BODY_LINE_HEIGHT', value: v })}
+            onBodyMaxWidthChange={(v) => dispatch({ type: 'SET_BODY_MAX_WIDTH', value: v })}
+            onHeadlineScaleChange={(v) => dispatch({ type: 'SET_HEADLINE_SCALE', value: v })}
             onResetLayout={() => dispatch({ type: 'RESET_LAYOUT' })}
           />
         </div>

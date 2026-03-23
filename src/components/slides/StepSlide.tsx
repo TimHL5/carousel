@@ -2,7 +2,7 @@ import type { SlideProps } from '@/types/carousel';
 import SlideLayout from './SlideLayout';
 
 export default function StepSlide(props: SlideProps) {
-  const { slide, theme, style, dimensions, fontScale, contentGap, accentBarWidth, contentPadding } = props;
+  const { slide, theme, style, dimensions, fontScale, contentGap, accentBarWidth, contentPadding, bodyLineHeight, bodyMaxWidth, headlineScale } = props;
   const scale = dimensions.width / 1080;
   const p = (px: number) => px * scale;
   const s = (px: number) => px * scale * fontScale;
@@ -69,7 +69,7 @@ export default function StepSlide(props: SlideProps) {
       {slide.headline && (
         <div
           style={{
-            fontSize: s(40),
+            fontSize: s(40 * headlineScale),
             fontWeight: 700,
             lineHeight: 1.2,
             color: theme.text,
@@ -87,9 +87,9 @@ export default function StepSlide(props: SlideProps) {
           style={{
             fontSize: s(24),
             fontWeight: 400,
-            lineHeight: 1.5,
+            lineHeight: bodyLineHeight,
             color: isMinimal ? theme.text : theme.secondary,
-            maxWidth: '85%',
+            maxWidth: `${bodyMaxWidth}%`,
             whiteSpace: 'pre-line' as const,
             position: 'relative',
             zIndex: 2,
