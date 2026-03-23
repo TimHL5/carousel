@@ -1,14 +1,23 @@
+'use client';
+
+import { useRef, useState, useCallback } from 'react';
 import SlideRenderer from '@/components/slides/SlideRenderer';
 import { THEMES } from '@/lib/themes';
 import { STYLES } from '@/lib/styles';
+import {
+  exportSlide,
+  exportAllAsZip,
+  exportAsPdf,
+  copySlideToClipboard,
+} from '@/lib/export';
 import type { SlideData, Theme, StyleVariant } from '@/types/carousel';
 
 // Sample slides covering all 9 types — real MLV content
 const sampleSlides: SlideData[] = [
   {
     type: 'hook',
-    headline: 'You don\'t need to learn to code to build an app.',
-    sub: 'Here\'s how to ship a product this weekend.',
+    headline: "You don't need to learn to code to build an app.",
+    sub: "Here's how to ship a product this weekend.",
     cta: 'SWIPE →',
   },
   {
@@ -64,36 +73,151 @@ const theme: Theme = THEMES[0]; // MLV Dark
 const style: StyleVariant = STYLES[0]; // Clean Step
 const dims = { width: 1080, height: 1350 };
 const previewScale = 0.4;
+const carouselTitle = 'How to build an app using Claude';
 
 export default function Home() {
+  const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [exporting, setExporting] = useState(false);
+  const [exportStatus, setExportStatus] = useState('');
+
+  const getSlideNodes = useCallback(() => {
+    return slideRefs.current.filter(Boolean) as HTMLDivElement[];
+  }, []);
+
+  const handleExportZip = async () => {
+    setExporting(true);
+    setExportStatus('Exporting...');
+    const nodes = getSlideNodes();
+    const result = await exportAllAsZip(nodes, carouselTitle, theme.id, (cur, tot) => {
+      setExportStatus(`Exporting ${cur}/${tot}...`);
+    });
+    if (result.success) {
+      const msg = result.failedSlides.length > 0
+        ? `Downloaded! (${result.failedSlides.length} slide(s) failed)`
+        : 'Downloaded!';
+      setExportStatus(msg);
+    } else {
+      setExportStatus(`Export failed: ${result.error}`);
+    }
+    setTimeout(() => setExportStatus(''), 3000);
+    setExporting(false);
+  };
+
+  const handleExportPdf = async () => {
+    setExporting(true);
+    setExportStatus('Generating PDF...');
+    const nodes = getSlideNodes();
+    const result = await exportAsPdf(nodes, carouselTitle, theme.id, dims, (cur, tot) => {
+      setExportStatus(`Rendering ${cur}/${tot}...`);
+    });
+    setExportStatus(result.success ? 'PDF downloaded!' : `PDF failed: ${result.error}`);
+    setTimeout(() => setExportStatus(''), 3000);
+    setExporting(false);
+  };
+
+  const handleExportSingle = async (index: number) => {
+    const node = slideRefs.current[index];
+    if (!node) return;
+    setExporting(true);
+    const slideNum = String(index + 1).padStart(2, '0');
+    const result = await exportSlide(node, `slide-${slideNum}.png`);
+    setExportStatus(result.success ? 'Slide downloaded!' : `Failed: ${result.error}`);
+    setTimeout(() => setExportStatus(''), 3000);
+    setExporting(false);
+  };
+
+  const handleCopySlide = async (index: number) => {
+    const node = slideRefs.current[index];
+    if (!node) return;
+    setExporting(true);
+    const slideNum = String(index + 1).padStart(2, '0');
+    const result = await copySlideToClipboard(node, `slide-${slideNum}.png`);
+    if (result.success) {
+      setExportStatus(result.error === 'clipboard-fallback' ? 'Saved as file (clipboard unavailable)' : 'Copied!');
+    } else {
+      setExportStatus(`Copy failed: ${result.error}`);
+    }
+    setTimeout(() => setExportStatus(''), 3000);
+    setExporting(false);
+  };
+
+  const btnStyle = {
+    padding: '10px 20px',
+    backgroundColor: '#6AC670',
+    color: '#0A0A0A',
+    border: 'none',
+    borderRadius: 4,
+    fontSize: 13,
+    fontWeight: 600 as const,
+    cursor: 'pointer' as const,
+    fontFamily: 'inherit',
+  };
+  const btnGhostStyle = {
+    ...btnStyle,
+    backgroundColor: 'transparent',
+    color: '#F5F5F5',
+    border: '1px solid rgba(255,255,255,0.12)',
+  };
+  const btnSmallStyle = {
+    ...btnGhostStyle,
+    padding: '4px 10px',
+    fontSize: 11,
+  };
+
   return (
-    <main
-      style={{
-        backgroundColor: '#08080C',
-        minHeight: '100vh',
-        padding: 32,
-      }}
-    >
-      <h1
-        style={{
-          color: '#F5F5F5',
-          fontSize: 24,
-          fontWeight: 700,
-          marginBottom: 8,
-        }}
-      >
+    <main style={{ backgroundColor: '#08080C', minHeight: '100vh', padding: 32 }}>
+      <h1 style={{ color: '#F5F5F5', fontSize: 24, fontWeight: 700, marginBottom: 8 }}>
         MLV Carousel Generator — Slide Preview
       </h1>
-      <p
-        style={{
-          color: '#9CA3AF',
-          fontSize: 14,
-          marginBottom: 32,
-        }}
-      >
+      <p style={{ color: '#9CA3AF', fontSize: 14, marginBottom: 16 }}>
         All 9 slide types · MLV Dark theme · Clean Step style · {dims.width}×{dims.height} at {Math.round(previewScale * 100)}% scale
       </p>
 
+      {/* Export buttons */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 32, alignItems: 'center' }}>
+        <button style={btnStyle} onClick={handleExportZip} disabled={exporting}>
+          Download All (ZIP)
+        </button>
+        <button style={btnGhostStyle} onClick={handleExportPdf} disabled={exporting}>
+          Download as PDF
+        </button>
+        {exportStatus && (
+          <span style={{ color: '#6AC670', fontSize: 13, fontWeight: 500 }}>
+            {exportStatus}
+          </span>
+        )}
+      </div>
+
+      {/* Hidden full-size slides for export capture */}
+      <div
+        style={{
+          position: 'absolute',
+          left: -9999,
+          top: 0,
+          pointerEvents: 'none' as const,
+        }}
+        aria-hidden="true"
+      >
+        {sampleSlides.map((slide, i) => (
+          <div
+            key={`export-${i}`}
+            ref={(el) => { slideRefs.current[i] = el; }}
+          >
+            <SlideRenderer
+              slide={slide}
+              slideIndex={i}
+              totalSlides={totalSlides}
+              theme={theme}
+              style={style}
+              dimensions={dims}
+              showLogo={false}
+              fontScale={1}
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Visible preview grid */}
       <div
         style={{
           display: 'grid',
@@ -103,17 +227,26 @@ export default function Home() {
       >
         {sampleSlides.map((slide, i) => (
           <div key={i}>
-            <div
-              style={{
-                color: '#6AC670',
-                fontSize: 11,
-                fontWeight: 500,
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
-                marginBottom: 6,
-              }}
-            >
-              [{slide.type}] — Slide {i + 1}/{totalSlides}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <div
+                style={{
+                  color: '#6AC670',
+                  fontSize: 11,
+                  fontWeight: 500,
+                  textTransform: 'uppercase' as const,
+                  letterSpacing: '0.1em',
+                }}
+              >
+                [{slide.type}] — Slide {i + 1}/{totalSlides}
+              </div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button style={btnSmallStyle} onClick={() => handleCopySlide(i)} disabled={exporting}>
+                  Copy
+                </button>
+                <button style={btnSmallStyle} onClick={() => handleExportSingle(i)} disabled={exporting}>
+                  PNG
+                </button>
+              </div>
             </div>
             <div
               style={{
@@ -131,16 +264,16 @@ export default function Home() {
                   transformOrigin: 'top left',
                 }}
               >
-              <SlideRenderer
-                slide={slide}
-                slideIndex={i}
-                totalSlides={totalSlides}
-                theme={theme}
-                style={style}
-                dimensions={dims}
-                showLogo={false}
-                fontScale={1}
-              />
+                <SlideRenderer
+                  slide={slide}
+                  slideIndex={i}
+                  totalSlides={totalSlides}
+                  theme={theme}
+                  style={style}
+                  dimensions={dims}
+                  showLogo={false}
+                  fontScale={1}
+                />
               </div>
             </div>
           </div>
