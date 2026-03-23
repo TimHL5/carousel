@@ -2,7 +2,7 @@ import type { SlideProps } from '@/types/carousel';
 import SlideLayout from './SlideLayout';
 
 export default function TextSlide(props: SlideProps) {
-  const { slide, theme, style, dimensions, fontScale } = props;
+  const { slide, theme, style, dimensions, fontScale, contentGap } = props;
   const scale = dimensions.width / 1080;
   const p = (px: number) => px * scale;
   const s = (px: number) => px * scale * fontScale;
@@ -18,7 +18,7 @@ export default function TextSlide(props: SlideProps) {
             fontWeight: 700,
             lineHeight: 1.2,
             color: theme.text,
-            marginBottom: p(16),
+            marginBottom: p(contentGap),
           }}
         >
           {slide.headline}

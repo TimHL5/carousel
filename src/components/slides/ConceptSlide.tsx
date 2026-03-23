@@ -2,7 +2,7 @@ import type { SlideProps } from '@/types/carousel';
 import SlideLayout from './SlideLayout';
 
 export default function ConceptSlide(props: SlideProps) {
-  const { slide, theme, style, dimensions, fontScale } = props;
+  const { slide, theme, style, dimensions, fontScale, contentGap } = props;
   const scale = dimensions.width / 1080;
   const p = (px: number) => px * scale;
   const s = (px: number) => px * scale * fontScale;
@@ -19,7 +19,7 @@ export default function ConceptSlide(props: SlideProps) {
             color: theme.accent,
             textTransform: 'uppercase' as const,
             letterSpacing: '0.1em',
-            marginBottom: p(12),
+            marginBottom: p(contentGap / 2),
           }}
         >
           {slide.label}
@@ -32,7 +32,7 @@ export default function ConceptSlide(props: SlideProps) {
             fontWeight: 700,
             lineHeight: 1.2,
             color: theme.text,
-            marginBottom: p(16),
+            marginBottom: p(contentGap),
           }}
         >
           {slide.headline}

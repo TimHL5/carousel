@@ -2,7 +2,7 @@ import type { SlideProps } from '@/types/carousel';
 import SlideLayout from './SlideLayout';
 
 export default function SplitSlide(props: SlideProps) {
-  const { slide, theme, style, dimensions, fontScale } = props;
+  const { slide, theme, style, dimensions, fontScale, contentGap } = props;
   const scale = dimensions.width / 1080;
   const p = (px: number) => px * scale;
   const s = (px: number) => px * scale * fontScale;
@@ -24,7 +24,7 @@ export default function SplitSlide(props: SlideProps) {
   const right = parseColumn(slide.right);
 
   const columnContent = (
-    <div style={{ display: 'flex', gap: p(24), flex: 1 }}>
+    <div style={{ display: 'flex', gap: p(contentGap), flex: 1 }}>
       {/* Left column */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' as const }}>
         {left.header && (
@@ -35,7 +35,7 @@ export default function SplitSlide(props: SlideProps) {
               color: theme.accent,
               textTransform: 'uppercase' as const,
               letterSpacing: '0.1em',
-              marginBottom: p(12),
+              marginBottom: p(contentGap / 2),
             }}
           >
             {left.header}
@@ -73,7 +73,7 @@ export default function SplitSlide(props: SlideProps) {
               color: theme.accent,
               textTransform: 'uppercase' as const,
               letterSpacing: '0.1em',
-              marginBottom: p(12),
+              marginBottom: p(contentGap / 2),
             }}
           >
             {right.header}
@@ -103,7 +103,7 @@ export default function SplitSlide(props: SlideProps) {
             fontWeight: 700,
             lineHeight: 1.2,
             color: theme.text,
-            marginBottom: p(24),
+            marginBottom: p(contentGap),
           }}
         >
           {slide.headline}

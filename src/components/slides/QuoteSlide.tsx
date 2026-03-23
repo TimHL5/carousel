@@ -10,7 +10,7 @@ export default function QuoteSlide(props: SlideProps) {
   const isMinimal = style.id === 'minimal-type';
 
   const quoteContent = (
-    <div style={{ display: 'flex', gap: p(16) }}>
+    <div style={{ display: 'flex', gap: p(contentGap * 0.67) }}>
       {/* Accent bar for quote — clean-step and bold-card */}
       {!isMinimal && accentBarWidth > 0 && (
         <div
@@ -30,7 +30,7 @@ export default function QuoteSlide(props: SlideProps) {
               fontWeight: 700,
               lineHeight: 1.2,
               color: theme.text,
-              marginBottom: p(16),
+              marginBottom: p(contentGap),
             }}
           >
             {slide.headline}
