@@ -132,18 +132,27 @@ function carouselReducer(state: CarouselState, action: Action): CarouselState {
       return { ...state, rawText: action.text };
     case 'PARSE': {
       const parsed = parseCarousel(state.rawText);
+      // Only overwrite caption from parser if caption field was NOT manually edited
+      // (i.e., only set it on initial parse or when raw text caption actually changes)
+      const parsedCaption = parsed.caption || '';
+      const captionFromLastParse = state.carousel?.caption || '';
+      const userEditedCaption = state.caption !== captionFromLastParse;
       return {
         ...state,
         carousel: parsed,
-        caption: parsed.caption || state.caption,
+        caption: userEditedCaption ? state.caption : (parsedCaption || state.caption),
         selectedSlideIndex: Math.min(state.selectedSlideIndex, Math.max(0, parsed.slides.length - 1)),
       };
     }
-    case 'SELECT_SLIDE':
-      return { ...state, selectedSlideIndex: action.index };
+    case 'SELECT_SLIDE': {
+      const maxIdx = (state.carousel?.slides.length || 1) - 1;
+      return { ...state, selectedSlideIndex: Math.max(0, Math.min(action.index, maxIdx)) };
+    }
     case 'REORDER_SLIDES': {
       if (!state.carousel) return state;
-      const newSlides = [...state.carousel.slides];
+      const slides = state.carousel.slides;
+      if (action.from < 0 || action.from >= slides.length || action.to < 0 || action.to >= slides.length) return state;
+      const newSlides = [...slides];
       const [moved] = newSlides.splice(action.from, 1);
       newSlides.splice(action.to, 0, moved);
       return { ...state, carousel: { ...state.carousel, slides: newSlides } };
@@ -182,14 +191,28 @@ function carouselReducer(state: CarouselState, action: Action): CarouselState {
 
 // ── Initial state ──────────────────────────────────────────────
 
+function isValidTheme(t: unknown): t is Theme {
+  if (!t || typeof t !== 'object') return false;
+  const obj = t as Record<string, unknown>;
+  return typeof obj.id === 'string' && typeof obj.name === 'string' &&
+    typeof obj.bg === 'string' && typeof obj.text === 'string' &&
+    typeof obj.accent === 'string' && typeof obj.secondary === 'string' &&
+    typeof obj.card === 'string';
+}
+
 function getInitialState(): CarouselState {
   const parsed = parseCarousel(SAMPLE_CONTENT);
   let customThemes: Theme[] = [];
   if (typeof window !== 'undefined') {
     try {
       const saved = localStorage.getItem('mlv-custom-themes');
-      if (saved) customThemes = JSON.parse(saved);
-    } catch { /* ignore */ }
+      if (saved) {
+        const parsed_themes = JSON.parse(saved);
+        if (Array.isArray(parsed_themes)) {
+          customThemes = parsed_themes.filter(isValidTheme);
+        }
+      }
+    } catch { /* corrupted localStorage — start fresh */ }
   }
   return {
     rawText: SAMPLE_CONTENT,
@@ -208,7 +231,12 @@ function getInitialState(): CarouselState {
 // ── Main component ─────────────────────────────────────────────
 
 export default function Home() {
-  const [history, dispatch, { canUndo, canRedo }] = useUndoReducer(carouselReducer, getInitialState());
+  // Skip undo history for high-frequency actions (keystrokes, slider drags)
+  const [history, dispatch, { canUndo, canRedo }] = useUndoReducer(
+    carouselReducer,
+    getInitialState(),
+    ['SET_RAW_TEXT', 'SET_CAPTION', 'SET_FONT_SCALE'],
+  );
   const state = history.present;
 
   const [exporting, setExporting] = useState(false);

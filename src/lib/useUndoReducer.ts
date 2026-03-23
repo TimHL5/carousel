@@ -3,11 +3,16 @@ import type { HistoryState } from '@/types/carousel';
 
 type UndoAction = { type: 'UNDO' } | { type: 'REDO' };
 
+// Actions that should NOT push to undo history (high-frequency or transient)
+type SkipHistoryAction = { _skipHistory?: boolean };
+
 const MAX_HISTORY = 50;
 
-export function useUndoReducer<S, A>(
+export function useUndoReducer<S, A extends { type: string }>(
   reducer: (state: S, action: A) => S,
   initialState: S,
+  /** Action types that bypass undo history (e.g., per-keystroke text changes) */
+  skipHistoryTypes: string[] = [],
 ): [HistoryState<S>, (action: A | UndoAction) => void, { canUndo: boolean; canRedo: boolean }] {
   const historyReducer = useCallback(
     (history: HistoryState<S>, action: A | UndoAction): HistoryState<S> => {
@@ -35,13 +40,19 @@ export function useUndoReducer<S, A>(
       const newPresent = reducer(history.present, action as A);
       if (newPresent === history.present) return history; // no change
 
+      // Skip history for high-frequency actions (keystrokes, slider drags)
+      const shouldSkip = skipHistoryTypes.includes((action as A).type);
+      if (shouldSkip) {
+        return { ...history, present: newPresent };
+      }
+
       return {
         past: [...history.past.slice(-MAX_HISTORY + 1), history.present],
         present: newPresent,
         future: [], // new action clears redo stack
       };
     },
-    [reducer],
+    [reducer, skipHistoryTypes],
   );
 
   const [history, dispatch] = useReducer(historyReducer, {
@@ -51,9 +62,14 @@ export function useUndoReducer<S, A>(
   });
 
   // Keyboard shortcuts: Cmd+Z / Cmd+Shift+Z
+  // Skip when focused in textarea/input (let native undo handle it)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
+        const target = e.target as HTMLElement;
+        if (target.tagName === 'TEXTAREA' || target.tagName === 'INPUT') {
+          return; // let native text undo handle it
+        }
         e.preventDefault();
         dispatch(e.shiftKey ? { type: 'REDO' } : { type: 'UNDO' });
       }
