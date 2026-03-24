@@ -45,8 +45,9 @@ export default function ElementWrapper({
   const [showContextMenu, setShowContextMenu] = useState(false);
   const dragOffset = useRef({ x: 0, y: 0 });
   const elementRef = useRef<HTMLDivElement>(null);
+  const dragListenersRef = useRef<{ move: (e: MouseEvent) => void; up: () => void } | null>(null);
 
-  // Clear hover when editMode turns off
+  // Cleanup drag listeners on unmount or editMode change (fixes listener leak)
   useEffect(() => {
     if (!editMode) {
       setIsHovered(false);
@@ -54,6 +55,13 @@ export default function ElementWrapper({
       setDragPos(null);
       setShowContextMenu(false);
     }
+    return () => {
+      if (dragListenersRef.current) {
+        window.removeEventListener('mousemove', dragListenersRef.current.move);
+        window.removeEventListener('mouseup', dragListenersRef.current.up);
+        dragListenersRef.current = null;
+      }
+    };
   }, [editMode]);
 
   const handleClick = useCallback(
@@ -109,14 +117,18 @@ export default function ElementWrapper({
       const handleMouseUp = () => {
         window.removeEventListener('mousemove', handleMouseMove);
         window.removeEventListener('mouseup', handleMouseUp);
+        dragListenersRef.current = null;
         setIsDragging(false);
-        // Commit final position
+        // Commit final position with bounds clamping
         setDragPos((finalPos) => {
           if (finalPos && onOverrideCommit) {
+            // Clamp to slide bounds (0 to slide width/height minus some minimum visible area)
+            const maxX = 1080 - 40; // keep at least 40px visible
+            const maxY = 1350 - 40;
             onOverrideCommit(slideIndex, {
               id: elementId,
-              x: Math.max(0, finalPos.x),
-              y: Math.max(0, finalPos.y),
+              x: Math.max(0, Math.min(maxX, finalPos.x)),
+              y: Math.max(0, Math.min(maxY, finalPos.y)),
               ...(override?.fontSize !== undefined && { fontSize: override.fontSize }),
               ...(override?.fontWeight !== undefined && { fontWeight: override.fontWeight }),
               ...(override?.color !== undefined && { color: override.color }),
@@ -127,6 +139,7 @@ export default function ElementWrapper({
         });
       };
 
+      dragListenersRef.current = { move: handleMouseMove, up: handleMouseUp };
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
     },
@@ -136,7 +149,7 @@ export default function ElementWrapper({
   // Context menu for "Reset position"
   const handleContextMenu = useCallback(
     (e: React.MouseEvent) => {
-      if (!editMode || !override?.x) return;
+      if (!editMode || override?.x === undefined) return;
       e.preventDefault();
       setShowContextMenu(true);
     },
