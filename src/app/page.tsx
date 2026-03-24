@@ -227,7 +227,7 @@ function carouselReducer(state: CarouselState, action: Action): CarouselState {
     case 'RESET_LAYOUT':
       return { ...state, contentPadding: 48, contentGap: 24, accentBarWidth: 4, contentAlign: 'left' as const, verticalAlign: 'center' as const, bodyLineHeight: 1.5, bodyMaxWidth: 85, headlineScale: 1.0 };
     case 'SET_EDIT_MODE':
-      return { ...state, editMode: action.value, selectedElementId: action.value ? state.selectedElementId : null };
+      return { ...state, editMode: action.value, selectedElementId: action.value ? state.selectedElementId : null, editingElementId: action.value ? state.editingElementId : null };
     case 'SET_SELECTED_ELEMENT':
       return { ...state, selectedElementId: action.id };
     case 'SET_ELEMENT_OVERRIDE': {

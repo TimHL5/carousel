@@ -66,10 +66,10 @@ export default function ElementWrapper({
       setIsDragging(false);
       setDragPos(null);
       setShowContextMenu(false);
-      if (isEditing) {
-        if (elementRef.current) elementRef.current.contentEditable = 'false';
+      if (isEditing && elementRef.current) {
+        elementRef.current.contentEditable = 'false';
         exitingEditRef.current = true; // prevent blur from committing
-        onEditingChange?.(null);
+        // editingElementId is already cleared by SET_EDIT_MODE reducer
       }
     }
     return () => {
