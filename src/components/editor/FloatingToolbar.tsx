@@ -41,8 +41,9 @@ export default function FloatingToolbar({
     const elRect = el.getBoundingClientRect();
     const x = elRect.left - canvasRect.left + elRect.width / 2;
     const y = elRect.top - canvasRect.top;
+    const elHeight = elRect.height;
     const below = y < TOOLBAR_HEIGHT + TOOLBAR_GAP + 10;
-    setPos({ x, y, below });
+    setPos({ x, y: below ? y + elHeight : y, below });
   }, [selectedElementId, canvasRef, override]);
 
   const commitOverride = useCallback((patch: Partial<ElementOverride>) => {
@@ -74,7 +75,7 @@ export default function FloatingToolbar({
       style={{
         position: 'absolute',
         left: pos.x,
-        top: pos.below ? pos.y + TOOLBAR_GAP + 40 : pos.y - TOOLBAR_HEIGHT - TOOLBAR_GAP,
+        top: pos.below ? pos.y + TOOLBAR_GAP : pos.y - TOOLBAR_HEIGHT - TOOLBAR_GAP,
         transform: 'translateX(-50%)',
         backgroundColor: '#111118',
         border: '1px solid rgba(255,255,255,0.08)',
@@ -117,8 +118,8 @@ export default function FloatingToolbar({
       <div style={{ width: 1, height: 20, backgroundColor: 'rgba(255,255,255,0.08)' }} />
 
       {/* Color swatches */}
-      {swatches.map((c) => (
-        <button key={c} onClick={() => commitOverride({ color: c })}
+      {swatches.map((c, i) => (
+        <button key={`${c}-${i}`} onClick={() => commitOverride({ color: c })}
           style={{
             width: 18, height: 18, borderRadius: 3, border: currentColor === c ? '2px solid #3B82F6' : '1px solid rgba(255,255,255,0.12)',
             backgroundColor: c, cursor: 'pointer', padding: 0, minHeight: 18,
@@ -127,8 +128,8 @@ export default function FloatingToolbar({
       <input
         value={hexInput}
         onChange={(e) => setHexInput(e.target.value)}
-        onBlur={() => { if (/^#[0-9a-fA-F]{3,6}$/.test(hexInput)) commitOverride({ color: hexInput }); }}
-        onKeyDown={(e) => { if (e.key === 'Enter' && /^#[0-9a-fA-F]{3,6}$/.test(hexInput)) commitOverride({ color: hexInput }); }}
+        onBlur={() => { if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(hexInput)) commitOverride({ color: hexInput }); }}
+        onKeyDown={(e) => { if (e.key === 'Enter' && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(hexInput)) commitOverride({ color: hexInput }); }}
         placeholder="#hex"
         style={{
           width: 48, padding: '2px 4px', fontSize: 10, backgroundColor: 'rgba(255,255,255,0.06)',

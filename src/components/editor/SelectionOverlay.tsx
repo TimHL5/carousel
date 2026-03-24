@@ -68,18 +68,23 @@ export default function SelectionOverlay({
     const isTop = handleIndex === 0 || handleIndex === 1 || handleIndex === 2;
     const isBottom = handleIndex === 4 || handleIndex === 5 || handleIndex === 6;
 
+    const startRectX = rect.x;
+    const startRectY = rect.y;
+
     const handleMove = (moveE: MouseEvent) => {
       const dx = (moveE.clientX - startX) / previewScale;
       const dy = (moveE.clientY - startY) / previewScale;
       let newW = startW;
       let newH = startH;
+      let newX = startRectX;
+      let newY = startRectY;
       if (isRight) newW = Math.max(MIN_SIZE, startW + dx);
-      if (isLeft) newW = Math.max(MIN_SIZE, startW - dx);
+      if (isLeft) { newW = Math.max(MIN_SIZE, startW - dx); newX = startRectX + (startW - newW) * previewScale; }
       if (isBottom) newH = Math.max(MIN_SIZE, startH + dy);
-      if (isTop) newH = Math.max(MIN_SIZE, startH - dy);
-      // Update rect visually during resize
+      if (isTop) { newH = Math.max(MIN_SIZE, startH - dy); newY = startRectY + (startH - newH) * previewScale; }
       setRect((prev) => prev ? {
         ...prev,
+        x: newX, y: newY,
         width: newW * previewScale,
         height: newH * previewScale,
       } : null);
