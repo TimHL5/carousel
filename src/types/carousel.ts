@@ -135,5 +135,5 @@ export interface SlideProps {
   headlineScale: number;
   editMode: boolean;
   selectedElementId: string | null;
-  onElementSelect?: (elementId: string) => void;
+  onElementSelect?: (elementId: string | null) => void;
 }

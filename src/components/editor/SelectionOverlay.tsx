@@ -25,7 +25,8 @@ export default function SelectionOverlay({ selectedElementId, canvasRef, preview
       setRect(null);
       return;
     }
-    const el = canvasRef.current.querySelector(`[data-element-id="${selectedElementId}"]`);
+    const escapedId = CSS.escape(selectedElementId);
+    const el = canvasRef.current.querySelector(`[data-element-id="${escapedId}"]`);
     if (!el) {
       setRect(null);
       return;
@@ -95,7 +96,7 @@ export default function SelectionOverlay({ selectedElementId, canvasRef, preview
             border: '1px solid #38BDF8',
             borderRadius: 1,
             cursor: h.cursor,
-            pointerEvents: 'auto', // handles will be interactive in Phase 6D
+            pointerEvents: 'none', // visual only until Phase 6D adds drag behavior
           }}
         />
       ))}

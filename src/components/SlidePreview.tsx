@@ -24,7 +24,7 @@ interface SlidePreviewProps {
   headlineScale: number;
   editMode: boolean;
   selectedElementId: string | null;
-  onElementSelect: (id: string) => void;
+  onElementSelect: (id: string | null) => void;
   onNavigate: (index: number) => void;
   onExportSingle: (index: number) => void;
   onCopySlide: (index: number) => void;
@@ -132,7 +132,7 @@ export default function SlidePreview({
         onClick={(e) => {
           // Click on empty canvas area → deselect
           if (editMode && e.target === e.currentTarget) {
-            onElementSelect('');
+            onElementSelect(null);
           }
         }}
         style={{

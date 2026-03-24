@@ -100,6 +100,8 @@ export default function ElementWrapper({
       onMouseLeave={() => setIsHovered(false)}
       style={{
         ...passStyle,
+        // Strip conflicting position props when override takes over (e.g., CTA has bottom/right but override uses left/top)
+        ...(hasPositionOverride && { bottom: undefined, right: undefined }),
         ...positionStyles,
         ...overrideStyles,
         ...editorStyles,
