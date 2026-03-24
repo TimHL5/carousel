@@ -28,7 +28,14 @@ src/
 │   ├── SlidePreview.tsx    # Center panel: live preview with navigation
 │   ├── Settings.tsx        # Right panel: platform, theme, style, export
 │   ├── CaptionArea.tsx     # Bottom: caption display + copy button
+│   ├── Toast.tsx           # Toast notifications (bottom-center)
+│   ├── editor/             # Visual editor components (Canva-like)
+│   │   ├── ElementWrapper.tsx    # Wraps each slide element — click, drag, resize, inline edit
+│   │   ├── SelectionOverlay.tsx  # Blue dashed selection border + 8 resize handles
+│   │   └── FloatingToolbar.tsx   # Font size, weight, color swatches, visibility, reset
 │   └── slides/             # Slide type renderers (one component per type)
+│       ├── SlideLayout.tsx # Shared wrapper: padding, dots, accent bar, counter
+│       ├── SlideRenderer.tsx # Dispatcher — routes slide.type to the right component
 │       ├── HookSlide.tsx
 │       ├── StepSlide.tsx
 │       ├── SplitSlide.tsx
@@ -40,6 +47,8 @@ src/
 │       └── TextSlide.tsx
 ├── lib/
 │   ├── parser.ts           # Text → slide data parser
+│   ├── serializer.ts       # Slide data → text serializer (inverse of parser)
+│   ├── useUndoReducer.ts   # Undo/redo history wrapper for useReducer
 │   ├── themes.ts           # Theme definitions + CSS variable mapping
 │   ├── styles.ts           # Design style variant definitions
 │   ├── dimensions.ts       # Export dimension presets
@@ -64,6 +73,19 @@ src/
 - Export quality is paramount: no blurry text, no clipped edges, no color shifts between preview and export.
 - The parser must be forgiving — handle messy input, extra whitespace, missing brackets. Never crash. Fall back to `[text]` slide type if unrecognized.
 - No user accounts, no database, no backend. Fully client-side tool.
+
+## Visual editor (Canva-like)
+The app includes a visual editor (toggle via "Edit" button in header) that lets users directly manipulate slide elements:
+- **Click** to select an element (headline, body, sub, cta, etc.)
+- **Drag** to reposition (8px snap-to-grid, Shift disables snap)
+- **Resize** via 8-point handles on selection overlay
+- **FloatingToolbar** appears above selected element: font size ±, weight L/M/B, 5 color swatches + hex input, visibility toggle, reset
+- **Double-click** text elements for inline editing via contentEditable (Cmd+Enter commits, Escape cancels)
+- **Undo/Redo** via Cmd+Z / Cmd+Shift+Z (skips contentEditable — browser handles text undo)
+
+Architecture: `ElementWrapper` wraps each text element in slide renderers. Overrides (`ElementOverride`) stored per-slide in `slide.overrides[]`. Elements without overrides stay in flexbox flow; elements with position overrides switch to `position: absolute`. Hidden export nodes always render with `editMode=false` — no editor chrome in exports.
+
+Key types: `CarouselState.editMode`, `CarouselState.selectedElementId`, `CarouselState.editingElementId`, `ElementOverride` (id, x, y, width, height, fontSize, fontWeight, color, visible, rotation).
 
 ## Export dimensions
 | Preset | Width | Height | Use case |
@@ -170,5 +192,13 @@ See DESIGN.md for the full design doc (approved via /office-hours).
 21. `/ship` — Tests pass, PR opened, deploy to Vercel
 22. `/document-release` — Update README and all docs
 
+**Phase 6: Visual Editor (Canva-like)**
+23. Build editor state, ElementWrapper, selection overlay, drag-to-move, resize, floating toolbar, inline text editing
+24. `/review` + `/codex` — Cross-model review (Claude + Codex gpt-5.4)
+25. `/qa` — Full editor workflow browser testing
+26. `/design-review` — Editor chrome visual consistency with DESIGN_SYSTEM.md
+27. `/ship` — PR created
+28. `/document-release` — Update all docs
+
 **Post-launch**
-23. `/retro` — After first week of team usage, review what to improve
+29. `/retro` — After first week of team usage, review what to improve
