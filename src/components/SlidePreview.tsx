@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import SlideRenderer from '@/components/slides/SlideRenderer';
 import SelectionOverlay from '@/components/editor/SelectionOverlay';
+import FloatingToolbar from '@/components/editor/FloatingToolbar';
 import type { SlideData, Theme, StyleVariant } from '@/types/carousel';
 
 interface SlidePreviewProps {
@@ -176,11 +177,26 @@ export default function SlidePreview({
         </div>
         {/* Selection overlay — shows handles on selected element */}
         {editMode && (
-          <SelectionOverlay
-            selectedElementId={selectedElementId}
-            canvasRef={containerRef}
-            previewScale={previewScale}
-          />
+          <>
+            <SelectionOverlay
+              selectedElementId={selectedElementId}
+              canvasRef={containerRef}
+              previewScale={previewScale}
+              slideIndex={selectedIndex}
+              onOverrideCommit={onOverrideCommit}
+              currentOverride={currentSlide?.overrides?.find((o) => o.id === (selectedElementId || ''))}
+            />
+            <FloatingToolbar
+              selectedElementId={selectedElementId}
+              override={currentSlide?.overrides?.find((o) => o.id === (selectedElementId || ''))}
+              theme={theme}
+              canvasRef={containerRef}
+              previewScale={previewScale}
+              slideIndex={selectedIndex}
+              onOverrideCommit={onOverrideCommit}
+              onOverrideRemove={onOverrideRemove}
+            />
+          </>
         )}
       </div>
 
