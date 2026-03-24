@@ -165,6 +165,7 @@ export default function Settings(props: SettingsProps) {
                   headlineScale={1}
                   editMode={false}
                   selectedElementId={null}
+                  previewScale={1}
                 />
               </div>
             </div>

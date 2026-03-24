@@ -136,4 +136,7 @@ export interface SlideProps {
   editMode: boolean;
   selectedElementId: string | null;
   onElementSelect?: (elementId: string | null) => void;
+  previewScale: number;
+  onOverrideCommit?: (slideIndex: number, override: ElementOverride) => void;
+  onOverrideRemove?: (slideIndex: number, elementId: string) => void;
 }

@@ -3,9 +3,10 @@ import SlideLayout from './SlideLayout';
 import ElementWrapper from '@/components/editor/ElementWrapper';
 
 export default function StepSlide(props: SlideProps) {
-  const { slide, theme, style, dimensions, fontScale, contentGap, accentBarWidth, contentPadding, bodyLineHeight, bodyMaxWidth, headlineScale, contentAlign, editMode, selectedElementId, onElementSelect } = props;
-  const getOverride = (id: string) => slide.overrides?.find((o) => o.id === id);
-  const scale = dimensions.width / 1080;
+  const { slide, theme, style, dimensions, fontScale, contentGap, accentBarWidth, contentPadding, bodyLineHeight, bodyMaxWidth, headlineScale, contentAlign, editMode, selectedElementId, onElementSelect, previewScale, onOverrideCommit, onOverrideRemove, slideIndex } = props;
+    const scale = dimensions.width / 1080;
+const getOverride = (id: string) => slide.overrides?.find((o) => o.id === id);
+  const editorProps = { editMode, scale, previewScale: previewScale || 1, slideIndex, onSelect: onElementSelect, onOverrideCommit, onOverrideRemove };
   const p = (px: number) => px * scale;
   const s = (px: number) => px * scale * fontScale;
   const num = slide.num || String(props.slideIndex + 1).padStart(2, '0');
@@ -70,7 +71,7 @@ export default function StepSlide(props: SlideProps) {
       )}
 
       {slide.headline && (
-        <ElementWrapper elementId="headline" editMode={editMode} isSelected={selectedElementId === 'headline'} override={getOverride('headline')} scale={scale} onSelect={onElementSelect} style={{
+        <ElementWrapper elementId="headline" isSelected={selectedElementId === 'headline'} override={getOverride('headline')} {...editorProps} style={{
             fontSize: s(40 * headlineScale), fontWeight: 700, lineHeight: 1.2, color: theme.text,
             marginBottom: p(contentGap / 2), position: 'relative', zIndex: 2,
           }}>
@@ -79,7 +80,7 @@ export default function StepSlide(props: SlideProps) {
       )}
 
       {slide.body && (
-        <ElementWrapper elementId="body" editMode={editMode} isSelected={selectedElementId === 'body'} override={getOverride('body')} scale={scale} onSelect={onElementSelect} style={{
+        <ElementWrapper elementId="body" isSelected={selectedElementId === 'body'} override={getOverride('body')} {...editorProps} style={{
             fontSize: s(24), fontWeight: 400, lineHeight: bodyLineHeight,
             color: isMinimal ? theme.text : theme.secondary, maxWidth: `${bodyMaxWidth}%`,
             ...(centered && { margin: '0 auto' }), whiteSpace: 'pre-line' as const, position: 'relative', zIndex: 2,

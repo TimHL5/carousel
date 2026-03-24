@@ -3,24 +3,24 @@ import SlideLayout from './SlideLayout';
 import ElementWrapper from '@/components/editor/ElementWrapper';
 
 export default function HookSlide(props: SlideProps) {
-  const { slide, theme, dimensions, fontScale, contentGap, contentPadding, bodyMaxWidth, headlineScale, contentAlign, editMode, selectedElementId, onElementSelect } = props;
+  const { slide, theme, dimensions, fontScale, contentGap, contentPadding, bodyMaxWidth, headlineScale, contentAlign, editMode, selectedElementId, onElementSelect, previewScale, onOverrideCommit, onOverrideRemove, slideIndex } = props;
   const scale = dimensions.width / 1080;
   const p = (px: number) => px * scale;
   const s = (px: number) => px * scale * fontScale;
   const centered = contentAlign === 'center';
 
   const getOverride = (id: string) => slide.overrides?.find((o) => o.id === id);
+  // Common editor props for all ElementWrappers in this slide
+  const editorProps = { editMode, scale, previewScale: previewScale || 1, slideIndex, onSelect: onElementSelect, onOverrideCommit, onOverrideRemove };
 
   return (
     <SlideLayout {...props}>
       {slide.headline && (
         <ElementWrapper
           elementId="headline"
-          editMode={editMode}
           isSelected={selectedElementId === 'headline'}
           override={getOverride('headline')}
-          scale={scale}
-          onSelect={onElementSelect}
+          {...editorProps}
           style={{
             fontSize: s(56 * headlineScale),
             fontWeight: 700,
@@ -37,11 +37,9 @@ export default function HookSlide(props: SlideProps) {
       {slide.sub && (
         <ElementWrapper
           elementId="sub"
-          editMode={editMode}
           isSelected={selectedElementId === 'sub'}
           override={getOverride('sub')}
-          scale={scale}
-          onSelect={onElementSelect}
+          {...editorProps}
           style={{
             fontSize: s(20),
             fontWeight: 400,
@@ -59,11 +57,9 @@ export default function HookSlide(props: SlideProps) {
       {slide.cta && (
         <ElementWrapper
           elementId="cta"
-          editMode={editMode}
           isSelected={selectedElementId === 'cta'}
           override={getOverride('cta')}
-          scale={scale}
-          onSelect={onElementSelect}
+          {...editorProps}
           style={{
             position: 'absolute',
             bottom: p(contentPadding),

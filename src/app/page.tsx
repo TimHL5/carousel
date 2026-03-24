@@ -469,6 +469,8 @@ export default function Home() {
             editMode={state.editMode}
             selectedElementId={state.selectedElementId}
             onElementSelect={(id) => dispatch({ type: 'SET_SELECTED_ELEMENT', id })}
+            onOverrideCommit={(si, ov) => dispatch({ type: 'SET_ELEMENT_OVERRIDE', slideIndex: si, override: ov })}
+            onOverrideRemove={(si, eid) => dispatch({ type: 'REMOVE_ELEMENT_OVERRIDE', slideIndex: si, elementId: eid })}
             onNavigate={(i) => dispatch({ type: 'SELECT_SLIDE', index: i })}
             onExportSingle={handleExportSingle}
             onCopySlide={handleCopySlide}
