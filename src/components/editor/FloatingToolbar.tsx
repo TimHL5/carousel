@@ -45,7 +45,7 @@ export default function FloatingToolbar({
     const elHeight = elRect.height;
     const below = y < TOOLBAR_HEIGHT + TOOLBAR_GAP + 10;
     setPos({ x, y: below ? y + elHeight : y, below });
-  }, [selectedElementId, canvasRef, override]);
+  }, [selectedElementId, canvasRef, override, editingElementId]);
 
   const commitOverride = useCallback((patch: Partial<ElementOverride>) => {
     if (!selectedElementId) return;

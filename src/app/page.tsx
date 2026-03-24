@@ -252,15 +252,26 @@ function carouselReducer(state: CarouselState, action: Action): CarouselState {
     case 'SET_EDITING_ELEMENT':
       return { ...state, editingElementId: action.id };
     case 'UPDATE_SLIDE_TEXT': {
-      if (!state.carousel) return state;
+      // Re-parse rawText first to capture any pending textarea edits not yet parsed
+      const freshCarousel = parseCarousel(state.rawText);
       const { slideIndex, field, value } = action;
-      if (slideIndex < 0 || slideIndex >= state.carousel.slides.length) return state;
+      if (slideIndex < 0 || slideIndex >= freshCarousel.slides.length) return state;
       const EDITABLE_FIELDS = ['headline', 'sub', 'body', 'cta', 'num', 'label', 'left', 'right'];
       if (!EDITABLE_FIELDS.includes(field)) return state;
-      const slides = [...state.carousel.slides];
+      // Preserve overrides from in-memory carousel
+      const oldSlides = state.carousel?.slides || [];
+      freshCarousel.slides = freshCarousel.slides.map((newSlide, i) => {
+        const oldSlide = oldSlides[i];
+        if (oldSlide && oldSlide.type === newSlide.type && oldSlide.overrides?.length) {
+          return { ...newSlide, overrides: oldSlide.overrides };
+        }
+        return newSlide;
+      });
+      const slides = [...freshCarousel.slides];
       slides[slideIndex] = { ...slides[slideIndex], [field]: value || undefined };
-      const newCarousel = { ...state.carousel, slides };
-      const newRawText = serializeCarousel(newCarousel);
+      const newCarousel = { ...freshCarousel, slides };
+      // Preserve caption from state (serializer may not reflect user's manual caption edit)
+      const newRawText = serializeCarousel({ ...newCarousel, caption: state.caption || newCarousel.caption });
       return { ...state, carousel: newCarousel, rawText: newRawText, editingElementId: null };
     }
     default:
