@@ -104,6 +104,7 @@ export interface CarouselState {
   // Editor
   editMode: boolean;            // toggle between preview and edit mode
   selectedElementId: string | null;  // currently selected element in editor
+  editingElementId: string | null;   // element currently being text-edited (contentEditable active)
 }
 
 // Undo/redo history wrapper — separates UI concern from data model
@@ -139,4 +140,8 @@ export interface SlideProps {
   previewScale: number;
   onOverrideCommit?: (slideIndex: number, override: ElementOverride) => void;
   onOverrideRemove?: (slideIndex: number, elementId: string) => void;
+  // Inline text editing
+  editingElementId?: string | null;
+  onTextCommit?: (slideIndex: number, field: string, value: string) => void;
+  onEditingChange?: (id: string | null) => void;
 }

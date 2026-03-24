@@ -131,7 +131,7 @@ export default function SelectionOverlay({
     <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 20 }}>
       <div style={{
         position: 'absolute', left: rect.x, top: rect.y, width: rect.width, height: rect.height,
-        border: '2px dashed #38BDF8', borderRadius: 2, pointerEvents: 'none',
+        border: '2px dashed #3B82F6', borderRadius: 2, pointerEvents: 'none',
       }} />
       {handles.map((h, i) => (
         <div
@@ -141,8 +141,8 @@ export default function SelectionOverlay({
             position: 'absolute',
             left: h.x - HANDLE_SIZE / 2, top: h.y - HANDLE_SIZE / 2,
             width: HANDLE_SIZE, height: HANDLE_SIZE,
-            backgroundColor: '#FFFFFF', border: '1px solid #38BDF8',
-            borderRadius: 1, cursor: h.cursor, pointerEvents: 'auto',
+            backgroundColor: '#FFFFFF', border: '1px solid #3B82F6',
+            borderRadius: 2, cursor: h.cursor, pointerEvents: 'auto',
           }}
         />
       ))}

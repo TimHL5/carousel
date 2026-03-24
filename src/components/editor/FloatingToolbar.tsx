@@ -12,6 +12,7 @@ interface FloatingToolbarProps {
   slideIndex: number;
   onOverrideCommit: (slideIndex: number, override: ElementOverride) => void;
   onOverrideRemove: (slideIndex: number, elementId: string) => void;
+  editingElementId?: string | null;
 }
 
 const TOOLBAR_HEIGHT = 36;
@@ -19,13 +20,13 @@ const TOOLBAR_GAP = 8;
 
 const btnStyle: React.CSSProperties = {
   padding: '4px 8px', fontSize: 11, fontWeight: 500, border: 'none',
-  borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit', minHeight: 28,
+  borderRadius: 4, cursor: 'pointer', fontFamily: 'inherit', minHeight: 28,
   transition: 'background 0.1s',
 };
 
 export default function FloatingToolbar({
   selectedElementId, override, theme, canvasRef, previewScale,
-  slideIndex, onOverrideCommit, onOverrideRemove,
+  slideIndex, onOverrideCommit, onOverrideRemove, editingElementId,
 }: FloatingToolbarProps) {
   const [pos, setPos] = useState<{ x: number; y: number; below: boolean } | null>(null);
   const [hexInput, setHexInput] = useState('');
@@ -60,7 +61,7 @@ export default function FloatingToolbar({
     onOverrideRemove(slideIndex, selectedElementId);
   }, [selectedElementId, slideIndex, onOverrideRemove]);
 
-  if (!pos || !selectedElementId) return null;
+  if (!pos || !selectedElementId || editingElementId) return null;
 
   const currentFontSize = override?.fontSize ?? 40; // default headline
   const currentWeight = override?.fontWeight ?? 700;
@@ -78,7 +79,7 @@ export default function FloatingToolbar({
         top: pos.below ? pos.y + TOOLBAR_GAP : pos.y - TOOLBAR_HEIGHT - TOOLBAR_GAP,
         transform: 'translateX(-50%)',
         backgroundColor: '#111118',
-        border: '1px solid rgba(255,255,255,0.08)',
+        border: '1px solid rgba(255,255,255,0.06)',
         borderRadius: 8,
         padding: '4px 8px',
         display: 'flex',
@@ -100,7 +101,7 @@ export default function FloatingToolbar({
       <button onClick={() => commitOverride({ fontSize: currentFontSize + 2 })}
         style={{ ...btnStyle, backgroundColor: 'rgba(255,255,255,0.06)', color: '#9CA3AF' }}>+</button>
 
-      <div style={{ width: 1, height: 20, backgroundColor: 'rgba(255,255,255,0.08)' }} />
+      <div style={{ width: 1, height: 20, backgroundColor: 'rgba(255,255,255,0.06)' }} />
 
       {/* Font weight */}
       {[400, 500, 700].map((w) => (
@@ -115,13 +116,13 @@ export default function FloatingToolbar({
         </button>
       ))}
 
-      <div style={{ width: 1, height: 20, backgroundColor: 'rgba(255,255,255,0.08)' }} />
+      <div style={{ width: 1, height: 20, backgroundColor: 'rgba(255,255,255,0.06)' }} />
 
       {/* Color swatches */}
       {swatches.map((c, i) => (
         <button key={`${c}-${i}`} onClick={() => commitOverride({ color: c })}
           style={{
-            width: 18, height: 18, borderRadius: 3, border: currentColor === c ? '2px solid #3B82F6' : '1px solid rgba(255,255,255,0.12)',
+            width: 18, height: 18, borderRadius: 3, border: currentColor === c ? '2px solid #3B82F6' : '1px solid rgba(255,255,255,0.06)',
             backgroundColor: c, cursor: 'pointer', padding: 0, minHeight: 18,
           }} />
       ))}
@@ -133,23 +134,23 @@ export default function FloatingToolbar({
         placeholder="#hex"
         style={{
           width: 48, padding: '2px 4px', fontSize: 10, backgroundColor: 'rgba(255,255,255,0.06)',
-          border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: '#F5F5F5',
+          border: '1px solid rgba(255,255,255,0.06)', borderRadius: 4, color: '#F5F5F5',
           fontFamily: 'monospace', outline: 'none',
         }}
       />
 
-      <div style={{ width: 1, height: 20, backgroundColor: 'rgba(255,255,255,0.08)' }} />
+      <div style={{ width: 1, height: 20, backgroundColor: 'rgba(255,255,255,0.06)' }} />
 
       {/* Visibility toggle */}
       <button onClick={() => commitOverride({ visible: !isVisible })}
-        style={{ ...btnStyle, backgroundColor: 'rgba(255,255,255,0.06)', color: isVisible ? '#F5F5F5' : '#EF4444', fontSize: 13 }}>
-        {isVisible ? '👁' : '🚫'}
+        style={{ ...btnStyle, backgroundColor: 'rgba(255,255,255,0.06)', color: isVisible ? '#F5F5F5' : '#EF4444' }}>
+        {isVisible ? 'Vis' : 'Hid'}
       </button>
 
       {/* Reset */}
       <button onClick={handleReset}
         style={{ ...btnStyle, backgroundColor: 'rgba(255,255,255,0.06)', color: '#EF4444' }}>
-        ↩
+        Reset
       </button>
     </div>
   );

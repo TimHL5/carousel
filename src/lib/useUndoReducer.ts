@@ -67,7 +67,7 @@ export function useUndoReducer<S, A extends { type: string }>(
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
         const target = e.target as HTMLElement;
-        if (target.tagName === 'TEXTAREA' || target.tagName === 'INPUT') {
+        if (target.tagName === 'TEXTAREA' || target.tagName === 'INPUT' || target.isContentEditable) {
           return; // let native text undo handle it
         }
         e.preventDefault();

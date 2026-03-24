@@ -3,10 +3,10 @@ import SlideLayout from './SlideLayout';
 import ElementWrapper from '@/components/editor/ElementWrapper';
 
 export default function TextSlide(props: SlideProps) {
-  const { slide, theme, style, dimensions, fontScale, contentGap, bodyLineHeight, bodyMaxWidth, headlineScale, editMode, selectedElementId, onElementSelect, previewScale, onOverrideCommit, onOverrideRemove, slideIndex } = props;
+  const { slide, theme, style, dimensions, fontScale, contentGap, bodyLineHeight, bodyMaxWidth, headlineScale, editMode, selectedElementId, onElementSelect, previewScale, onOverrideCommit, onOverrideRemove, slideIndex, editingElementId, onTextCommit, onEditingChange } = props;
     const scale = dimensions.width / 1080;
 const getOverride = (id: string) => slide.overrides?.find((o) => o.id === id);
-  const editorProps = { editMode, scale, previewScale: previewScale || 1, slideIndex, onSelect: onElementSelect, onOverrideCommit, onOverrideRemove };
+  const editorProps = { editMode, scale, previewScale: previewScale || 1, slideIndex, onSelect: onElementSelect, onOverrideCommit, onOverrideRemove, editingElementId, onTextCommit, onEditingChange };
   const p = (px: number) => px * scale;
   const s = (px: number) => px * scale * fontScale;
   const isBoldCard = style.id === 'bold-card';
@@ -15,7 +15,7 @@ const getOverride = (id: string) => slide.overrides?.find((o) => o.id === id);
   const content = (
     <>
       {slide.headline && (
-        <ElementWrapper elementId="headline" isSelected={selectedElementId === 'headline'} override={getOverride('headline')} {...editorProps} style={{
+        <ElementWrapper elementId="headline" isSelected={selectedElementId === 'headline'} override={getOverride('headline')} textField="headline" {...editorProps} style={{
             fontSize: s(40 * headlineScale), fontWeight: 700, lineHeight: 1.2, color: theme.text, marginBottom: p(contentGap),
           }}>
           {slide.headline}

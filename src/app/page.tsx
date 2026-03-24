@@ -7,6 +7,7 @@ import Settings from '@/components/Settings';
 import CaptionArea from '@/components/CaptionArea';
 import Toast from '@/components/Toast';
 import { parseCarousel } from '@/lib/parser';
+import { serializeCarousel } from '@/lib/serializer';
 import { THEMES, DEFAULT_THEME_ID, getThemeById } from '@/lib/themes';
 import { STYLES, DEFAULT_STYLE_ID, getStyleById } from '@/lib/styles';
 import { PRESETS, DEFAULT_PRESET_ID, getPresetById } from '@/lib/dimensions';
@@ -137,7 +138,9 @@ type Action =
   | { type: 'SET_EDIT_MODE'; value: boolean }
   | { type: 'SET_SELECTED_ELEMENT'; id: string | null }
   | { type: 'SET_ELEMENT_OVERRIDE'; slideIndex: number; override: import('@/types/carousel').ElementOverride }
-  | { type: 'REMOVE_ELEMENT_OVERRIDE'; slideIndex: number; elementId: string };
+  | { type: 'REMOVE_ELEMENT_OVERRIDE'; slideIndex: number; elementId: string }
+  | { type: 'SET_EDITING_ELEMENT'; id: string | null }
+  | { type: 'UPDATE_SLIDE_TEXT'; slideIndex: number; field: string; value: string };
 
 function carouselReducer(state: CarouselState, action: Action): CarouselState {
   switch (action.type) {
@@ -246,6 +249,20 @@ function carouselReducer(state: CarouselState, action: Action): CarouselState {
       slides[action.slideIndex] = slide;
       return { ...state, carousel: { ...state.carousel, slides } };
     }
+    case 'SET_EDITING_ELEMENT':
+      return { ...state, editingElementId: action.id };
+    case 'UPDATE_SLIDE_TEXT': {
+      if (!state.carousel) return state;
+      const { slideIndex, field, value } = action;
+      if (slideIndex < 0 || slideIndex >= state.carousel.slides.length) return state;
+      const EDITABLE_FIELDS = ['headline', 'sub', 'body', 'cta', 'num', 'label', 'left', 'right'];
+      if (!EDITABLE_FIELDS.includes(field)) return state;
+      const slides = [...state.carousel.slides];
+      slides[slideIndex] = { ...slides[slideIndex], [field]: value || undefined };
+      const newCarousel = { ...state.carousel, slides };
+      const newRawText = serializeCarousel(newCarousel);
+      return { ...state, carousel: newCarousel, rawText: newRawText, editingElementId: null };
+    }
     default:
       return state;
   }
@@ -297,6 +314,7 @@ function getInitialState(): CarouselState {
     headlineScale: 1.0,
     editMode: false,
     selectedElementId: null,
+    editingElementId: null,
   };
 }
 
@@ -307,7 +325,7 @@ export default function Home() {
   const [history, dispatch, { canUndo, canRedo }] = useUndoReducer(
     carouselReducer,
     getInitialState(),
-    ['SET_RAW_TEXT', 'SET_CAPTION', 'SET_FONT_SCALE', 'SET_CONTENT_PADDING', 'SET_CONTENT_GAP', 'SET_ACCENT_BAR_WIDTH', 'SET_BODY_LINE_HEIGHT', 'SET_BODY_MAX_WIDTH', 'SET_HEADLINE_SCALE', 'SET_EDIT_MODE', 'SET_SELECTED_ELEMENT'],
+    ['SET_RAW_TEXT', 'SET_CAPTION', 'SET_FONT_SCALE', 'SET_CONTENT_PADDING', 'SET_CONTENT_GAP', 'SET_ACCENT_BAR_WIDTH', 'SET_BODY_LINE_HEIGHT', 'SET_BODY_MAX_WIDTH', 'SET_HEADLINE_SCALE', 'SET_EDIT_MODE', 'SET_SELECTED_ELEMENT', 'SET_EDITING_ELEMENT'],
   );
   const state = history.present;
 
@@ -471,6 +489,9 @@ export default function Home() {
             onElementSelect={(id) => dispatch({ type: 'SET_SELECTED_ELEMENT', id })}
             onOverrideCommit={(si, ov) => dispatch({ type: 'SET_ELEMENT_OVERRIDE', slideIndex: si, override: ov })}
             onOverrideRemove={(si, eid) => dispatch({ type: 'REMOVE_ELEMENT_OVERRIDE', slideIndex: si, elementId: eid })}
+            editingElementId={state.editingElementId}
+            onTextCommit={(si, field, value) => dispatch({ type: 'UPDATE_SLIDE_TEXT', slideIndex: si, field, value })}
+            onEditingChange={(id) => dispatch({ type: 'SET_EDITING_ELEMENT', id })}
             onNavigate={(i) => dispatch({ type: 'SELECT_SLIDE', index: i })}
             onExportSingle={handleExportSingle}
             onCopySlide={handleCopySlide}

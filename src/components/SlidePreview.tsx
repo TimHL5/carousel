@@ -28,6 +28,9 @@ interface SlidePreviewProps {
   onElementSelect: (id: string | null) => void;
   onOverrideCommit: (slideIndex: number, override: import('@/types/carousel').ElementOverride) => void;
   onOverrideRemove: (slideIndex: number, elementId: string) => void;
+  editingElementId?: string | null;
+  onTextCommit?: (slideIndex: number, field: string, value: string) => void;
+  onEditingChange?: (id: string | null) => void;
   onNavigate: (index: number) => void;
   onExportSingle: (index: number) => void;
   onCopySlide: (index: number) => void;
@@ -57,6 +60,9 @@ export default function SlidePreview({
   onElementSelect,
   onOverrideCommit,
   onOverrideRemove,
+  editingElementId,
+  onTextCommit,
+  onEditingChange,
   onNavigate,
   onExportSingle,
   onCopySlide,
@@ -173,6 +179,9 @@ export default function SlidePreview({
             previewScale={previewScale}
             onOverrideCommit={onOverrideCommit}
             onOverrideRemove={onOverrideRemove}
+            editingElementId={editingElementId}
+            onTextCommit={onTextCommit}
+            onEditingChange={onEditingChange}
           />
         </div>
         {/* Selection overlay — shows handles on selected element */}
@@ -195,6 +204,7 @@ export default function SlidePreview({
               slideIndex={selectedIndex}
               onOverrideCommit={onOverrideCommit}
               onOverrideRemove={onOverrideRemove}
+              editingElementId={editingElementId}
             />
           </>
         )}

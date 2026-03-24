@@ -3,7 +3,7 @@ import SlideLayout from './SlideLayout';
 import ElementWrapper from '@/components/editor/ElementWrapper';
 
 export default function HookSlide(props: SlideProps) {
-  const { slide, theme, dimensions, fontScale, contentGap, contentPadding, bodyMaxWidth, headlineScale, contentAlign, editMode, selectedElementId, onElementSelect, previewScale, onOverrideCommit, onOverrideRemove, slideIndex } = props;
+  const { slide, theme, dimensions, fontScale, contentGap, contentPadding, bodyMaxWidth, headlineScale, contentAlign, editMode, selectedElementId, onElementSelect, previewScale, onOverrideCommit, onOverrideRemove, slideIndex, editingElementId, onTextCommit, onEditingChange } = props;
   const scale = dimensions.width / 1080;
   const p = (px: number) => px * scale;
   const s = (px: number) => px * scale * fontScale;
@@ -11,7 +11,7 @@ export default function HookSlide(props: SlideProps) {
 
   const getOverride = (id: string) => slide.overrides?.find((o) => o.id === id);
   // Common editor props for all ElementWrappers in this slide
-  const editorProps = { editMode, scale, previewScale: previewScale || 1, slideIndex, onSelect: onElementSelect, onOverrideCommit, onOverrideRemove };
+  const editorProps = { editMode, scale, previewScale: previewScale || 1, slideIndex, onSelect: onElementSelect, onOverrideCommit, onOverrideRemove, editingElementId, onTextCommit, onEditingChange };
 
   return (
     <SlideLayout {...props}>
@@ -20,6 +20,7 @@ export default function HookSlide(props: SlideProps) {
           elementId="headline"
           isSelected={selectedElementId === 'headline'}
           override={getOverride('headline')}
+          textField="headline"
           {...editorProps}
           style={{
             fontSize: s(56 * headlineScale),
@@ -39,6 +40,7 @@ export default function HookSlide(props: SlideProps) {
           elementId="sub"
           isSelected={selectedElementId === 'sub'}
           override={getOverride('sub')}
+          textField="sub"
           {...editorProps}
           style={{
             fontSize: s(20),
@@ -59,6 +61,7 @@ export default function HookSlide(props: SlideProps) {
           elementId="cta"
           isSelected={selectedElementId === 'cta'}
           override={getOverride('cta')}
+          textField="cta"
           {...editorProps}
           style={{
             position: 'absolute',

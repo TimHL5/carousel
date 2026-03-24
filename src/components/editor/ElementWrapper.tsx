@@ -16,6 +16,11 @@ interface ElementWrapperProps {
   onOverrideCommit?: (slideIndex: number, override: ElementOverride) => void;
   onOverrideRemove?: (slideIndex: number, elementId: string) => void;
   style?: React.CSSProperties;
+  // Inline text editing
+  textField?: string;              // SlideData field name (e.g., "headline", "body")
+  editingElementId?: string | null; // which element is currently being text-edited
+  onTextCommit?: (slideIndex: number, field: string, value: string) => void;
+  onEditingChange?: (id: string | null) => void;
 }
 
 const GRID_SIZE = 8; // snap-to-grid base unit from DESIGN_SYSTEM.md
@@ -38,6 +43,10 @@ export default function ElementWrapper({
   onOverrideCommit,
   onOverrideRemove,
   style: passStyle,
+  textField,
+  editingElementId,
+  onTextCommit,
+  onEditingChange,
 }: ElementWrapperProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -46,6 +55,9 @@ export default function ElementWrapper({
   const dragOffset = useRef({ x: 0, y: 0 });
   const elementRef = useRef<HTMLDivElement>(null);
   const dragListenersRef = useRef<{ move: (e: MouseEvent) => void; up: () => void } | null>(null);
+  const originalTextRef = useRef<string>('');
+  const exitingEditRef = useRef(false); // guards against blur firing after commit/cancel
+  const isEditing = editingElementId === elementId && !!textField;
 
   // Cleanup drag listeners on unmount or editMode change (fixes listener leak)
   useEffect(() => {
@@ -54,6 +66,11 @@ export default function ElementWrapper({
       setIsDragging(false);
       setDragPos(null);
       setShowContextMenu(false);
+      if (isEditing) {
+        if (elementRef.current) elementRef.current.contentEditable = 'false';
+        exitingEditRef.current = true; // prevent blur from committing
+        onEditingChange?.(null);
+      }
     }
     return () => {
       if (dragListenersRef.current) {
@@ -66,17 +83,82 @@ export default function ElementWrapper({
 
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
-      if (!editMode || isDragging) return;
+      if (!editMode || isDragging || isEditing) return;
       e.stopPropagation();
       onSelect?.(elementId);
     },
-    [editMode, isDragging, elementId, onSelect],
+    [editMode, isDragging, isEditing, elementId, onSelect],
   );
+
+  // ── Inline text editing ──────────────────────────────────
+  const startEditing = useCallback(() => {
+    if (!textField || !editMode || !elementRef.current) return;
+    exitingEditRef.current = false;
+    originalTextRef.current = elementRef.current.innerText;
+    onEditingChange?.(elementId);
+    // Make contentEditable and focus
+    const el = elementRef.current;
+    el.contentEditable = 'true';
+    el.focus();
+    // Select all text
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const sel = window.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+  }, [textField, editMode, elementId, onEditingChange]);
+
+  const commitEditing = useCallback(() => {
+    if (!elementRef.current || !textField || exitingEditRef.current) return;
+    exitingEditRef.current = true;
+    const newText = elementRef.current.innerText.trim();
+    elementRef.current.contentEditable = 'false';
+    onTextCommit?.(slideIndex, textField, newText);
+  }, [textField, slideIndex, onTextCommit]);
+
+  const cancelEditing = useCallback(() => {
+    if (!elementRef.current || exitingEditRef.current) return;
+    exitingEditRef.current = true;
+    elementRef.current.innerText = originalTextRef.current;
+    elementRef.current.contentEditable = 'false';
+    onEditingChange?.(null);
+  }, [onEditingChange]);
+
+  const handleDoubleClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (!editMode || !textField || !isSelected) return;
+      e.preventDefault();
+      e.stopPropagation();
+      startEditing();
+    },
+    [editMode, textField, isSelected, startEditing],
+  );
+
+  const handleKeyDownEditing = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (!isEditing) return;
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        cancelEditing();
+      } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        e.stopPropagation();
+        commitEditing();
+      }
+    },
+    [isEditing, cancelEditing, commitEditing],
+  );
+
+  const handleBlurEditing = useCallback(() => {
+    if (!isEditing) return;
+    commitEditing();
+  }, [isEditing, commitEditing]);
 
   // ── Drag behavior ──────────────────────────────────────
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      if (!editMode || !isSelected || e.button !== 0) return;
+      if (!editMode || !isSelected || e.button !== 0 || isEditing) return;
       e.preventDefault();
       e.stopPropagation();
 
@@ -215,12 +297,14 @@ export default function ElementWrapper({
   // Editor affordances
   const editorStyles: React.CSSProperties = editMode
     ? {
-        cursor: isDragging ? 'grabbing' : isSelected ? 'grab' : 'pointer',
-        outline: isSelected
+        cursor: isEditing ? 'text' : isDragging ? 'grabbing' : isSelected ? 'grab' : 'pointer',
+        outline: isEditing
           ? '2px solid #3B82F6'
-          : isHovered
-            ? '1px dashed rgba(59, 130, 246, 0.5)'
-            : 'none',
+          : isSelected
+            ? '2px solid #3B82F6'
+            : isHovered
+              ? '1px dashed rgba(59, 130, 246, 0.5)'
+              : 'none',
         outlineOffset: 2,
         transition: isDragging ? 'none' : 'outline 0.1s ease-out',
       }
@@ -232,16 +316,21 @@ export default function ElementWrapper({
         ref={elementRef}
         data-element-id={elementId}
         onClick={handleClick}
+        onDoubleClick={handleDoubleClick}
         onMouseDown={handleMouseDown}
-        onMouseEnter={() => editMode && setIsHovered(true)}
+        onMouseEnter={() => editMode && !isEditing && setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         onContextMenu={handleContextMenu}
+        onKeyDown={handleKeyDownEditing}
+        onBlur={handleBlurEditing}
+        suppressContentEditableWarning={isEditing}
         style={{
           ...passStyle,
           ...(hasPositionOverride && { bottom: undefined, right: undefined }),
           ...positionStyles,
           ...overrideStyles,
           ...editorStyles,
+          ...(isEditing && { whiteSpace: 'pre-wrap' as const }),
         }}
       >
         {children}
@@ -254,7 +343,7 @@ export default function ElementWrapper({
             left: elementRef.current.getBoundingClientRect().right + 4,
             top: elementRef.current.getBoundingClientRect().top,
             backgroundColor: '#111118',
-            border: '1px solid rgba(255,255,255,0.12)',
+            border: '1px solid rgba(255,255,255,0.06)',
             borderRadius: 4,
             padding: '4px 0',
             zIndex: 100,
